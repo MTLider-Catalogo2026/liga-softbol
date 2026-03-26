@@ -700,19 +700,20 @@ body.is-offline .main{margin-top:32px}
   <!-- CALENDARIO -->
   <div class="page" id="pg-calendar">
     <div class="rf" style="margin-bottom:14px">
-      <select class="sel" id="cal-cat-filter"><option>Todas las categorías</option></select>
+      <select class="sel" id="cal-cat-filter" onchange="renderCalendar()"><option>Todas</option></select>
       <div class="sp"></div>
-      <button class="btn btn-navy btn-sm" onclick="toast('🎲 Round Robin próximamente')">🎲 Generar</button>
+      <button class="btn btn-navy btn-sm" onclick="openNuevoJuego()">+ Nuevo juego</button>
     </div>
-    <div class="card" style="padding:14px 16px">
-      <div id="calendar-body">
-        <div style="text-align:center;padding:36px 16px;color:var(--g400)">
-          <div style="font-size:32px;margin-bottom:8px">📅</div>
-          <div style="font-size:14px;font-weight:600;color:var(--g600);margin-bottom:5px">Sin juegos programados</div>
-          <div style="font-size:12px">Agrega equipos y crea juegos desde Configuración</div>
-        </div>
+    <!-- Active game banner (if any) -->
+    <div id="active-game-banner" style="display:none;background:var(--red);border-radius:var(--r-md);padding:11px 14px;margin-bottom:12px;display:none;align-items:center;gap:10px">
+      <span style="font-size:18px">🔴</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:#fff" id="active-game-txt">Juego en curso</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7)" id="active-game-sub">Toca para continuar anotando</div>
       </div>
+      <button class="btn btn-sm" onclick="go('live',null)" style="background:#fff;color:var(--red);font-weight:700;flex-shrink:0">▶ Continuar</button>
     </div>
+    <div id="calendar-list"></div>
   </div>
 
   <!-- LÍDERES -->
@@ -742,6 +743,66 @@ body.is-offline .main{margin-top:32px}
       <div class="sf"><span>Liga Softbol Femenil de Zapopan</span><img class="beisbol-logo" src="" alt="Beisbolandia"></div>
     </div>
   </div>
+
+<!-- MODAL: Nuevo Juego -->
+<div class="modal-bg" id="modal-juego">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title">📅 Agregar Juego</div>
+    <!-- Tipo -->
+    <div style="display:flex;gap:6px;margin-bottom:14px">
+      <button id="tipo-oficial" onclick="setTipoJuego('oficial')"
+        style="flex:1;padding:8px;border-radius:var(--r-md);border:1.5px solid var(--navy);background:var(--navy);color:#fff;font-size:12px;font-weight:700;cursor:pointer">
+        🏆 Oficial
+      </button>
+      <button id="tipo-amistoso" onclick="setTipoJuego('amistoso')"
+        style="flex:1;padding:8px;border-radius:var(--r-md);border:1.5px solid var(--g200);background:var(--white);color:var(--g600);font-size:12px;font-weight:700;cursor:pointer">
+        🤝 Amistoso
+      </button>
+      <button id="tipo-practica" onclick="setTipoJuego('practica')"
+        style="flex:1;padding:8px;border-radius:var(--r-md);border:1.5px solid var(--g200);background:var(--white);color:var(--g600);font-size:12px;font-weight:700;cursor:pointer">
+        🏋️ Práctica
+      </button>
+    </div>
+    <input type="hidden" id="juego-tipo" value="oficial">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-row">
+        <label class="form-label">Fecha</label>
+        <input class="form-input" type="date" id="juego-fecha">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Hora</label>
+        <input class="form-input" type="time" id="juego-hora" value="10:00">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-row">
+        <label class="form-label">Cancha</label>
+        <select class="form-input sel" id="juego-cancha"></select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Categoría</label>
+        <select class="form-input sel" id="juego-cat"></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Equipo Local 🏠</label>
+      <select class="form-input sel" id="juego-local"></select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Equipo Visitante ✈️</label>
+      <select class="form-input sel" id="juego-visitante"></select>
+    </div>
+    <div class="form-row" id="jornada-row">
+      <label class="form-label">Jornada</label>
+      <input class="form-input" type="number" id="juego-jornada" value="1" min="1" max="50">
+    </div>
+    <div class="modal-actions" style="flex-wrap:wrap;gap:8px">
+      <button class="btn btn-sm" onclick="closeModal('modal-juego')">Cancelar</button>
+      <button class="btn btn-sm" onclick="saveJuego(false)" style="flex:1">💾 Solo guardar</button>
+      <button class="btn btn-red btn-sm" onclick="saveJuego(true)" style="flex:1">🔴 Guardar e iniciar ahora</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL: Cambio en el juego -->
 <div class="modal-bg" id="modal-cambio">
@@ -1893,6 +1954,263 @@ async function darDeBaja(){
   if(curEq) await loadRoster(curEq.id);
 }
 
+
+
+// ════════════════════════════════════════════════════
+// CALENDARIO — crear y listar juegos
+// ════════════════════════════════════════════════════
+let _juegos = []; // local cache
+let _juegoTipo = 'oficial';
+
+function setTipoJuego(tipo){
+  _juegoTipo = tipo;
+  document.getElementById('juego-tipo').value = tipo;
+  ['oficial','amistoso','practica'].forEach(t=>{
+    const btn = document.getElementById('tipo-'+t);
+    if(!btn) return;
+    if(t===tipo){ btn.style.background='var(--navy)'; btn.style.color='#fff'; btn.style.borderColor='var(--navy)'; }
+    else        { btn.style.background='var(--white)'; btn.style.color='var(--g600)'; btn.style.borderColor='var(--g200)'; }
+  });
+  document.getElementById('jornada-row').style.display = tipo==='oficial' ? 'block' : 'none';
+}
+
+function openNuevoJuego(){
+  // Set today as default date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('juego-fecha').value = today;
+  document.getElementById('juego-hora').value  = '10:00';
+  document.getElementById('juego-jornada').value = '1';
+  setTipoJuego('oficial');
+  // Populate selects
+  const eqOpts = APP.teamsList.length
+    ? APP.teamsList.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')
+    : '<option value="">— sin equipos —</option>';
+  document.getElementById('juego-local').innerHTML     = eqOpts;
+  document.getElementById('juego-visitante').innerHTML = eqOpts;
+  // Set visitante to second team by default
+  const vEl = document.getElementById('juego-visitante');
+  if(vEl && vEl.options.length > 1) vEl.selectedIndex = 1;
+  // Canchas
+  const canchaOpts = APP.canchas.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('juego-cancha').innerHTML = canchaOpts;
+  // Categorías
+  const catOpts = APP.cats.map(c=>`<option>${c.name}</option>`).join('');
+  document.getElementById('juego-cat').innerHTML = catOpts;
+  openModal('modal-juego');
+}
+
+async function saveJuego(iniciarAhora=false){
+  const localEl    = document.getElementById('juego-local');
+  const visitEl    = document.getElementById('juego-visitante');
+  const localId    = localEl?.value;
+  const visitanteId= visitEl?.value;
+
+  if(!localId || !visitanteId){ toast('⚠️ Selecciona ambos equipos'); return; }
+  if(localId === visitanteId){ toast('⚠️ El equipo local y visitante deben ser diferentes'); return; }
+
+  const fecha   = document.getElementById('juego-fecha')?.value || new Date().toLocaleDateString('es-MX');
+  const hora    = document.getElementById('juego-hora')?.value  || '10:00';
+  const cancha  = document.getElementById('juego-cancha')?.value|| APP.canchas[0]||'Cancha Principal';
+  const cat     = document.getElementById('juego-cat')?.value   || APP.cats[0]?.name||'Mayor';
+  const jornada = document.getElementById('juego-jornada')?.value|| '1';
+  const tipo    = document.getElementById('juego-tipo')?.value  || 'oficial';
+
+  const localName    = localEl?.options[localEl?.selectedIndex]?.text  || 'Local';
+  const visitanteName= visitEl?.options[visitEl?.selectedIndex]?.text  || 'Visitante';
+
+  closeModal('modal-juego');
+  showLoading('Guardando juego...');
+
+  const res = await queueOrPost({
+    action: 'addJuego',
+    fecha, hora, cancha, categoria: cat,
+    local_id: localId, visitante_id: visitanteId,
+    jornada, tipo,
+    estado: 'programado',
+  });
+
+  hideLoading();
+
+  if(res && (res.ok || res.offline)){
+    const juegoId = res.id || 'JUEGO_LOCAL_' + Date.now();
+    // Add to local cache
+    _juegos.unshift({
+      id: juegoId, fecha, hora, cancha, categoria: cat,
+      local_id: localId, visitante_id: visitanteId,
+      local_nombre: localName, visitante_nombre: visitanteName,
+      carreras_local: 0, carreras_visitante: 0,
+      estado: iniciarAhora ? 'en_vivo' : 'programado',
+      jornada, tipo,
+    });
+    renderCalendar();
+    toast((res.offline?'📵':'✅')+' Juego '+localName+' vs '+visitanteName+' guardado');
+
+    if(iniciarAhora){
+      iniciarJuego({
+        id: juegoId, local_id: localId, visitante_id: visitanteId,
+        local_nombre: localName, visitante_nombre: visitanteName, categoria: cat,
+      });
+    }
+  } else {
+    toast('⚠️ Error al guardar el juego');
+  }
+}
+
+function iniciarJuego(juego){
+  // Set global game state
+  window._juegoId      = juego.id;
+  window._juegoActual  = juego;
+  lLocalScore  = 0;
+  lVisScore    = 0;
+  lInning      = 1;
+  lMitad       = 'alta';
+  lOuts        = 0;
+  lTurno       = 1;
+  lBalls=0; lStrikes=0; lFouls=0; lPitches=0;
+
+  // Update live banner names
+  const ln = document.getElementById('live-local-name');
+  const vn = document.getElementById('live-vis-name');
+  if(ln) ln.textContent = juego.local_nombre  || 'Local';
+  if(vn) vn.textContent = juego.visitante_nombre || 'Visitante';
+
+  // Reset scoreboard
+  updLiveUI();
+  updCount();
+
+  // Clear play log
+  const log = document.getElementById('play-log');
+  if(log) log.innerHTML='<li style="text-align:center;padding:18px;color:var(--g400);font-size:13px">Juego iniciado — anota la primera jugada</li>';
+
+  // Load lineups for cambio modal
+  if(juego.local_id && juego.visitante_id){
+    loadLineup(juego.local_id, juego.visitante_id).catch(()=>{});
+  }
+
+  // Mark game as in_vivo
+  queueOrPost({ action:'updateJuego', id:juego.id, estado:'en_vivo', iniciado: new Date().toISOString() }).catch(()=>{});
+
+  // Navigate to live screen
+  go('live', null);
+  // Highlight live button in sidebar
+  document.querySelectorAll('.nb').forEach(b=>{ if(b.textContent.includes('Anotar')) b.classList.add('act'); else b.classList.remove('act'); });
+
+  toast('🔴 Juego iniciado · '+( juego.local_nombre||'Local')+' vs '+(juego.visitante_nombre||'Visitante'));
+
+  // Show active game banner
+  const banner = document.getElementById('active-game-banner');
+  const txt    = document.getElementById('active-game-txt');
+  const sub    = document.getElementById('active-game-sub');
+  if(banner){ banner.style.display='flex'; }
+  if(txt)   { txt.textContent = (juego.local_nombre||'Local')+' vs '+(juego.visitante_nombre||'Visitante')+' 🔴 En vivo'; }
+  if(sub)   { sub.textContent = juego.categoria+' · '+juego.cancha; }
+}
+
+function renderCalendar(){
+  const el = document.getElementById('calendar-list');
+  if(!el) return;
+
+  const filter = document.getElementById('cal-cat-filter')?.value || 'Todas';
+  let juegos = _juegos.filter(j => filter==='Todas' || j.categoria===filter || !j.categoria);
+
+  if(!juegos.length){
+    el.innerHTML=`<div class="card" style="padding:14px 16px">
+      <div style="text-align:center;padding:32px 16px;color:var(--g400)">
+        <div style="font-size:32px;margin-bottom:8px">📅</div>
+        <div style="font-size:14px;font-weight:600;color:var(--g600);margin-bottom:8px">Sin juegos programados</div>
+        <div style="font-size:12px;margin-bottom:16px">Crea el primer juego con el botón + Nuevo juego</div>
+        <button class="btn btn-navy btn-sm" onclick="openNuevoJuego()">+ Agregar juego ahora</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  // Group by jornada/date
+  const grupos = {};
+  juegos.forEach(j=>{
+    const key = j.estado==='en_vivo' ? '🔴 En vivo ahora'
+               : j.tipo==='amistoso' ? '🤝 Amistosos'
+               : j.tipo==='practica' ? '🏋️ Prácticas'
+               : ('Jornada '+( j.jornada||'—')+' · '+formatFecha(j.fecha));
+    if(!grupos[key]) grupos[key]=[]; grupos[key].push(j);
+  });
+
+  el.innerHTML = Object.entries(grupos).map(([grupo, gJuegos])=>`
+    <div class="j-hdr">${grupo}</div>
+    ${gJuegos.map(j=>{
+      const isLive  = j.estado==='en_vivo';
+      const isFinal = j.estado==='finalizado';
+      const isProg  = j.estado==='programado'||!j.estado;
+      const badge   = isLive  ? '<span class="badge blv">● En vivo</span>'
+                    : isFinal ? '<span class="badge bf">Final</span>'
+                    : '<span class="badge bn">Programado</span>';
+      const score   = isFinal||isLive
+        ? `<div class="gs">${j.carreras_local||0} — ${j.carreras_visitante||0}</div>`
+        : `<div class="gs" style="color:var(--g200);font-size:13px">vs</div>`;
+      const accion  = isLive
+        ? `<button class="btn btn-red btn-xs" onclick="continuarJuego('${j.id}')">▶ Continuar</button>`
+        : isProg
+        ? `<button class="btn btn-xs btn-navy" onclick="iniciarDesdeCalendario('${j.id}')">▶ Iniciar</button>`
+        : '';
+      return `<div class="gr">
+        <div class="gd"><div class="gd-d">${formatFecha(j.fecha)}</div><div class="gd-t">${j.hora||'—'}</div></div>
+        <div class="gt">${j.local_nombre||j.local_id} <span class="vs">vs</span> ${j.visitante_nombre||j.visitante_id}</div>
+        ${score}
+        <div class="gm" style="gap:5px">${badge}<span class="gv">${j.cancha||''}</span>${accion}</div>
+      </div>`;
+    }).join('')}
+  `).join('');
+}
+
+function formatFecha(f){
+  if(!f) return '—';
+  try{
+    const d = new Date(f+'T12:00:00');
+    return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'});
+  }catch(e){ return f; }
+}
+
+async function loadJuegosFromAPI(){
+  if(!apiConnected()) return;
+  const res = await apiGet('getJuegos');
+  if(res && res.juegos && res.juegos.length){
+    // Enrich with team names
+    _juegos = res.juegos.map(j=>({
+      ...j,
+      local_nombre:     APP.teamsList.find(t=>t.id===j.local_id)?.name    || j.local_id,
+      visitante_nombre: APP.teamsList.find(t=>t.id===j.visitante_id)?.name || j.visitante_id,
+    }));
+    renderCalendar();
+    // Check for active game
+    const active = _juegos.find(j=>j.estado==='en_vivo');
+    if(active){
+      const banner = document.getElementById('active-game-banner');
+      const txt    = document.getElementById('active-game-txt');
+      if(banner){ banner.style.display='flex'; }
+      if(txt)   { txt.textContent = (active.local_nombre||'Local')+' vs '+(active.visitante_nombre||'Visitante')+' 🔴 En vivo'; }
+    }
+  }
+}
+
+function iniciarDesdeCalendario(id){
+  const j = _juegos.find(x=>x.id===id);
+  if(j) iniciarJuego(j);
+  else toast('⚠️ Juego no encontrado');
+}
+
+function continuarJuego(id){
+  const j = _juegos.find(x=>x.id===id);
+  if(j){
+    window._juegoId     = j.id;
+    window._juegoActual = j;
+    const ln = document.getElementById('live-local-name');
+    const vn = document.getElementById('live-vis-name');
+    if(ln) ln.textContent = j.local_nombre    || 'Local';
+    if(vn) vn.textContent = j.visitante_nombre|| 'Visitante';
+    go('live', null);
+    toast('▶ Continuando '+j.local_nombre+' vs '+j.visitante_nombre);
+  }
+}
 
 // ════════════════════════════════════════════════════
 // CAMBIOS EN EL JUEGO (Pitcher / Posición / Sustitución)
