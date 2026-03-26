@@ -1223,26 +1223,34 @@ let lBalls=1,lStrikes=1,lFouls=0,lPitches=4;
 let lInning=1,lMitad="alta",lOuts=0,lTurno=1;
 
 async function init() {
-  autoTheme();
-  await initOffline(); // Setup offline DB and SW // Apply theme before anything renders
-  // Mostrar estado de API
-  updateApiBanner();
+  try { autoTheme(); } catch(e) { console.warn('theme error', e); }
 
+  // Core UI renders FIRST — always, no matter what
+  try {
+    renderCatTabs();
+    renderStandings();
+    renderCatsEditor();
+    renderTeamsList();
+    renderAccessTable();
+    populateCatSelects();
+    populateTeamSelects();
+    renderCanchas();
+    renderDias();
+  } catch(e) { console.warn('render error', e); }
+
+  // API banner
+  try { updateApiBanner(); } catch(e) {}
+
+  // Offline system — NON-BLOCKING, runs in background
+  initOffline().catch(e => console.warn('Offline init failed (non-critical):', e));
+
+  // Load from API if connected — NON-BLOCKING
   if (apiConnected()) {
     showLoading('Cargando datos de la liga...');
-    await loadFromAPI();
-    hideLoading();
+    loadFromAPI()
+      .catch(e => console.warn('API load error:', e))
+      .finally(() => hideLoading());
   }
-
-  renderCatTabs();
-  renderStandings();
-  renderCatsEditor();
-  renderTeamsList();
-  renderAccessTable();
-  populateCatSelects();
-  populateTeamSelects();
-  renderCanchas();
-  renderDias();
 }
 
 function showLoading(msg) {
@@ -1360,6 +1368,7 @@ function switchCat(i, btn) {
 }
 
 function renderStandings() {
+  try {
   const catName = APP.cats[currentCat] ? APP.cats[currentCat].name : '';
   const data = standingsData[catName] || [];
   if (data.length === 0) {
@@ -1538,13 +1547,22 @@ const pages = {standings:'pg-standings',calendar:'pg-calendar',leaders:'pg-leade
 const titles = {standings:'🏆 Standings',calendar:'📅 Calendario',leaders:'📊 Líderes estadísticos',boxscore:'📋 Box Score',scorecard:'🗂️ Scorecard',live:'🔴 Anotar en vivo',roster:'👥 Roster',credenciales:'🪪 Credenciales',decretos:'📜 Decretos',export:'📤 Exportar',admin:'⚙️ Configuración'};
 
 function go(key, btn) {
-  Object.values(pages).forEach(id=>document.getElementById(id).classList.remove('act'));
-  document.getElementById(pages[key]).classList.add('act');
-  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('act'));
-  if(btn) btn.classList.add('act');
-  document.getElementById('tb-title').textContent = titles[key];
-  closeSidebar();
-  window.scrollTo(0,0);
+  try {
+    Object.values(pages).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('act');
+    });
+    const target = document.getElementById(pages[key]);
+    if (target) target.classList.add('act');
+    document.querySelectorAll('.nb').forEach(b => b.classList.remove('act'));
+    if (btn) btn.classList.add('act');
+    const titleEl = document.getElementById('tb-title');
+    if (titleEl) titleEl.textContent = titles[key] || key;
+    closeSidebar();
+    window.scrollTo(0, 0);
+  } catch(e) {
+    console.error('Navigation error:', e);
+  }
 }
 
 function openSidebar() {
@@ -1752,12 +1770,12 @@ function setTheme(theme) {
 }
 
 function autoTheme() {
-  // Check saved preference first
-  const saved = localStorage.getItem('liga_theme');
-  if (saved) { setTheme(saved); return; }
-  // Otherwise use system preference
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  setTheme(prefersDark ? 'dark' : 'light');
+  try {
+    const saved = localStorage.getItem('liga_theme');
+    if (saved) { setTheme(saved); return; }
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(prefersDark ? 'dark' : 'light');
+  } catch(e) { console.warn('theme init error', e); }
 }
 
 // Listen for system theme changes
@@ -1802,13 +1820,17 @@ function editJugadora(id) {
 
 // Reload roster when team selector changes
 document.addEventListener('DOMContentLoaded', () => {
-  const sel = document.getElementById('ros-equipo');
-  if (sel) {
-    sel.addEventListener('change', () => {
-      const eq = APP.teamsList.find(t => t.name === sel.value);
-      if (eq) loadRoster(eq.id);
-    });
-  }
+  try {
+    const sel = document.getElementById('ros-equipo');
+    if (sel) {
+      sel.addEventListener('change', () => {
+        try {
+          const eq = APP.teamsList.find(t => t.name === sel.value);
+          if (eq) loadRoster(eq.id);
+        } catch(e) {}
+      });
+    }
+  } catch(e) {}
 });
 
 // ═══════════════ API URL SETUP ═══════════════
@@ -2156,11 +2178,11 @@ self.addEventListener('fetch', e => {
 
 // ── Init offline system ──
 async function initOffline() {
-  await openDB();
-  updateOnlineStatus();
-  await restoreGameState();
-  await updatePendingCount();
-  registerSW();
+  try { await openDB(); } catch(e) { console.warn('IndexedDB not available:', e); return; }
+  try { updateOnlineStatus(); } catch(e) {}
+  try { await restoreGameState(); } catch(e) {}
+  try { await updatePendingCount(); } catch(e) {}
+  try { registerSW(); } catch(e) {}
 }
 
 // ═══════════════ START ═══════════════
