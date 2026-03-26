@@ -460,6 +460,99 @@ img{display:block}
   .rg{grid-template-columns:repeat(4,1fr)}
   .eg{grid-template-columns:1fr}
 }
+
+/* ═══════════════ DARK MODE ═══════════════ */
+[data-theme="dark"] {
+  --navy:    #4A6CF7;
+  --navy-dk: #1a1f3a;
+  --navy-lt: #5a7cf8;
+  --red:     #E8303F;
+  --red-lt:  #ff5060;
+  --white:   #1e2235;
+  --off:     #161929;
+  --g100:    #252942;
+  --g200:    #2e3350;
+  --g400:    #7b84b0;
+  --g600:    #a0a8cc;
+  --g800:    #e0e4f8;
+  --gold:    #F0C040;
+  --green:   #2ecc71;
+  --sh-sm:   0 1px 4px rgba(0,0,0,.4);
+  --sh-md:   0 4px 18px rgba(0,0,0,.5);
+  --sh-lg:   0 8px 32px rgba(0,0,0,.6);
+}
+[data-theme="dark"] body { background: #0f1225; }
+[data-theme="dark"] .sidebar { background: #0d1020; }
+[data-theme="dark"] .season-chip { background: rgba(232,48,63,.18); border-color: rgba(232,48,63,.35); }
+[data-theme="dark"] .topbar { background: #1e2235; border-color: #2e3350; }
+[data-theme="dark"] .card { background: #1e2235; border-color: #2e3350; }
+[data-theme="dark"] .mc { background: #1e2235; border-color: #2e3350; }
+[data-theme="dark"] .config-card { background: #1e2235; border-color: #2e3350; }
+[data-theme="dark"] .modal { background: #1e2235; }
+[data-theme="dark"] .form-input { background: #252942; border-color: #2e3350; color: #e0e4f8; }
+[data-theme="dark"] .sel { background: #252942; border-color: #2e3350; color: #e0e4f8; }
+[data-theme="dark"] .cat-input { background: #252942; border-color: #2e3350; color: #e0e4f8; }
+[data-theme="dark"] .plc { background: #1e2235; border-color: #2e3350; }
+[data-theme="dark"] .plc:hover { background: #252942; border-color: #4A6CF7; }
+[data-theme="dark"] .gr { background: #1e2235; border-color: #2e3350; }
+[data-theme="dark"] .gr:hover { border-color: #4A6CF7; }
+[data-theme="dark"] .dc { background: #1e2235; border-color: #2e3350; }
+[data-theme="dark"] .ec { background: #1e2235; border-color: #2e3350; }
+[data-theme="dark"] .ec:hover { border-color: #4A6CF7; }
+[data-theme="dark"] .dt th { background: #252942; color: #a0a8cc; border-color: #2e3350; }
+[data-theme="dark"] .dt td { border-color: #2e3350; }
+[data-theme="dark"] .dt tbody tr:hover td { background: #252942; }
+[data-theme="dark"] .cb { background: #1e2235; border-color: #2e3350; }
+[data-theme="dark"] .bt-card { background: #1e2235; border-color: #2e3350; }
+[data-theme="dark"] .rb { background: #1e2235; border-color: #2e3350; color: #e0e4f8; }
+[data-theme="dark"] .pb { background: #1e2235; }
+[data-theme="dark"] .live-banner { background: #0d1020; }
+[data-theme="dark"] .ls td { border-color: #2e3350; }
+[data-theme="dark"] .ls th { background: #252942; border-color: #2e3350; }
+[data-theme="dark"] .sc td { background: #1e2235; border-color: #2e3350; }
+[data-theme="dark"] .sc td.pn2, [data-theme="dark"] .sc td.pp, [data-theme="dark"] .sc td.tot { background: #252942; }
+[data-theme="dark"] .p-card { background: #252942; border-color: #2e3350; }
+[data-theme="dark"] .u-card { background: rgba(255,255,255,.05); }
+[data-theme="dark"] .cat-tab { color: #7b84b0; }
+[data-theme="dark"] .cat-tab.act { color: #e0e4f8; }
+[data-theme="dark"] .ch { border-color: #2e3350; }
+[data-theme="dark"] .api-banner { background: #1e2235; border-color: #2e3350; }
+[data-theme="dark"] .api-banner.connected { background: rgba(46,204,113,.12); border-color: rgba(46,204,113,.3); color: #2ecc71; }
+[data-theme="dark"] .sf { background: #252942; border-top-color: #4A6CF7; }
+[data-theme="dark"] .toast { background: #1e2235; border-color: #2e3350; }
+[data-theme="dark"] .modal-bg { background: rgba(0,0,0,.7); }
+[data-theme="dark"] .loading-overlay { background: rgba(15,18,37,.9); }
+[data-theme="dark"] .bw { background: rgba(46,204,113,.15); color: #2ecc71; }
+[data-theme="dark"] .bl { background: rgba(232,48,63,.15); color: #ff7080; }
+[data-theme="dark"] .bn { background: rgba(74,108,247,.15); color: #7b9eff; }
+[data-theme="dark"] .bf { background: #252942; color: #7b84b0; }
+[data-theme="dark"] .teams-list > div { border-color: #2e3350; }
+[data-theme="dark"] .j-hdr { border-color: #2e3350; color: #7b84b0; }
+[data-theme="dark"] .pst { border-color: #2e3350; }
+[data-theme="dark"] .li2 { border-color: #2e3350; }
+[data-theme="dark"] .divider { background: #2e3350; }
+[data-theme="dark"] #teams-list > div { border-color: #2e3350; }
+
+/* Dark mode toggle button */
+.theme-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--g200);
+  background: var(--white);
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--sh-md);
+  transition: all .2s;
+}
+.theme-toggle:hover { transform: scale(1.1); }
 </style>
 </head>
 <body>
@@ -468,6 +561,7 @@ img{display:block}
   <div class="spinner"></div>
   <div class="loading-text" id="loading-text">Cargando...</div>
 </div>
+<button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
 <div class="ov" id="ov" onclick="closeSidebar()"></div>
 <div class="toast" id="toast"></div>
 
@@ -928,23 +1022,41 @@ img{display:block}
 
   <!-- ══════ CONFIGURACIÓN ADMIN ══════ -->
   <div class="page" id="pg-admin">
+    <!-- ── FILA 1: Backend URL ── -->
+    <div class="config-card" style="margin-bottom:16px">
+      <div class="config-title">🔗 Conexión al Backend (Google Apps Script)</div>
+      <div class="rf" style="gap:8px;align-items:flex-end">
+        <div style="flex:1">
+          <label class="form-label">URL del Apps Script</label>
+          <input class="form-input" id="api-url-input" placeholder="https://script.google.com/macros/s/..." style="font-size:12px;width:100%">
+        </div>
+        <button class="btn btn-navy btn-sm" onclick="setApiUrl()" style="flex-shrink:0;height:38px">Conectar</button>
+      </div>
+      <div style="font-size:11px;color:var(--g400);margin-top:6px" id="api-url-status">Sin conectar — modo demo activo</div>
+    </div>
+
+    <!-- ── FILA 2: 2 columnas ── -->
     <div class="config-grid">
       <!-- Liga info -->
       <div class="config-card">
         <div class="config-title">🏟️ Información de la liga</div>
-        <div class="form-row" style="margin-bottom:14px;padding:10px;background:var(--off);border-radius:var(--r-md);border:1px solid var(--g200)">
-          <label class="form-label">🔗 URL del Apps Script (backend)</label>
-          <div class="rf">
-            <input class="form-input" id="api-url-input" placeholder="https://script.google.com/macros/s/..." style="flex:1;font-size:11px">
-            <button class="btn btn-navy btn-xs" onclick="setApiUrl()">Conectar</button>
-          </div>
-          <div style="font-size:11px;color:var(--g400);margin-top:4px" id="api-url-status">Sin conectar — modo demo activo</div>
-        </div</div>
-        <div class="form-row"><label class="form-label">Nombre oficial</label><input class="form-input" id="cfg-name" value="Liga Softbol Femenil de Zapopan" oninput="updateLeague()"></div>
-        <div class="form-row"><label class="form-label">Temporada actual</label><input class="form-input" id="cfg-season" value="Temporada 2025" oninput="updateLeague()"></div>
-        <div class="form-row"><label class="form-label">Subtítulo / Ciudad</label><input class="form-input" id="cfg-sub" value="Jalisco · México" oninput="updateLeague()"></div>
-        <div class="form-row"><label class="form-label">Número de equipos</label><input class="form-input" id="cfg-teams" value="28" type="number" min="2" max="64" oninput="updateLeague()"></div>
-        <button class="btn btn-navy btn-sm" onclick="saveConfig()">💾 Guardar cambios</button>
+        <div class="form-row">
+          <label class="form-label">Nombre oficial</label>
+          <input class="form-input" id="cfg-name" value="Liga Softbol Femenil de Zapopan" oninput="updateLeague()">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Temporada actual</label>
+          <input class="form-input" id="cfg-season" value="Temporada 2025" oninput="updateLeague()">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Ciudad / Estado</label>
+          <input class="form-input" id="cfg-sub" value="Jalisco · México" oninput="updateLeague()">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Número de equipos</label>
+          <input class="form-input" id="cfg-teams" value="28" type="number" min="2" max="64" oninput="updateLeague()">
+        </div>
+        <button class="btn btn-navy btn-sm" style="width:100%" onclick="saveConfig()">💾 Guardar información</button>
       </div>
 
       <!-- Categorías -->
@@ -957,24 +1069,25 @@ img{display:block}
       <!-- Equipos -->
       <div class="config-card">
         <div class="config-title">👥 Equipos registrados</div>
-        <div id="teams-list" style="max-height:220px;overflow-y:auto"></div>
-        <div class="form-row mt4"><label class="form-label">Agregar equipo</label>
-          <div class="rf"><input class="form-input" id="new-team-name" placeholder="Nombre del equipo" style="flex:1"><button class="btn btn-navy btn-xs" onclick="addTeam()">+ Agregar</button></div>
+        <div id="teams-list" style="max-height:240px;overflow-y:auto;margin-bottom:12px"></div>
+        <label class="form-label">Agregar nuevo equipo</label>
+        <div class="rf" style="gap:8px">
+          <input class="form-input" id="new-team-name" placeholder="Nombre del equipo" style="flex:1">
+          <button class="btn btn-navy btn-xs" onclick="addTeam()" style="flex-shrink:0">+ Agregar</button>
         </div>
       </div>
 
       <!-- Canchas -->
       <div class="config-card">
         <div class="config-title">🏟️ Canchas / Campos</div>
-        <div id="canchas-list" style="margin-bottom:10px"></div>
-        <div class="rf" style="margin-bottom:14px">
+        <div id="canchas-list" style="margin-bottom:12px"></div>
+        <label class="form-label">Agregar cancha</label>
+        <div class="rf" style="gap:8px;margin-bottom:14px">
           <input class="form-input" id="new-cancha-input" placeholder="Nombre de la cancha..." style="flex:1">
-          <button class="btn btn-navy btn-xs" onclick="addCancha()">+ Agregar</button>
+          <button class="btn btn-navy btn-xs" onclick="addCancha()" style="flex-shrink:0">+ Agregar</button>
         </div>
-        <div class="form-row">
-          <label class="form-label">Días de juego</label>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px" id="dias-grid"></div>
-        </div>
+        <label class="form-label">Días de juego</label>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px" id="dias-grid"></div>
         <button class="btn btn-navy btn-sm" style="margin-top:14px;width:100%" onclick="saveCanchas()">💾 Guardar canchas y días</button>
       </div>
     </div>
@@ -1053,6 +1166,7 @@ let currentCat = 0;
 let lBalls=1,lStrikes=1,lFouls=0,lPitches=4;
 
 async function init() {
+  autoTheme(); // Apply theme before anything renders
   // Mostrar estado de API
   updateApiBanner();
 
@@ -1521,6 +1635,36 @@ function toast(msg) {
   tTimer=setTimeout(()=>t.classList.remove('show'),2800);
 }
 
+
+
+// ═══════════════ DARK MODE ═══════════════
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  setTheme(isDark ? 'light' : 'dark');
+}
+
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('liga_theme', theme);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+function autoTheme() {
+  // Check saved preference first
+  const saved = localStorage.getItem('liga_theme');
+  if (saved) { setTheme(saved); return; }
+  // Otherwise use system preference
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  setTheme(prefersDark ? 'dark' : 'light');
+}
+
+// Listen for system theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  if (!localStorage.getItem('liga_theme')) {
+    setTheme(e.matches ? 'dark' : 'light');
+  }
+});
 
 // ═══════════════ ROSTER LOADER ═══════════════
 async function loadRoster(equipo_id) {
