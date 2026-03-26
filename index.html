@@ -450,6 +450,36 @@ body.is-offline .main{margin-top:32px}
 .cambio-tab-btn.active { background: var(--navy) !important; color: #fff !important; }
 .cambio-tab-btn:not(.active) { background: transparent !important; color: var(--g600) !important; }
 [data-theme="dark"] .cambio-tab-btn:not(.active) { color: var(--g400) !important; }
+
+/* ── Batter stats popup ── */
+.batter-popup{
+  position:fixed;bottom:0;left:0;right:0;z-index:600;
+  background:var(--white);border-radius:var(--r-lg) var(--r-lg) 0 0;
+  box-shadow:0 -8px 40px rgba(26,43,139,.22);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+  max-height:75vh;overflow-y:auto;overscroll-behavior:contain;
+}
+.batter-popup.show{transform:translateY(0)}
+.batter-popup-drag{width:40px;height:4px;border-radius:2px;background:var(--g200);margin:10px auto 0}
+.batter-popup-hdr{padding:14px 16px 10px;border-bottom:1px solid var(--g100)}
+.batter-popup-name{font-family:var(--fd);font-size:20px;font-weight:800;color:var(--navy)}
+.batter-popup-sub{font-size:12px;color:var(--g400);margin-top:2px}
+.batter-stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 16px;border-bottom:1px solid var(--g100)}
+.bst{text-align:center}
+.bstv{font-family:var(--fd);font-size:22px;font-weight:800;color:var(--navy)}
+.bstl{font-size:10px;color:var(--g400);text-transform:uppercase;letter-spacing:.05em}
+.batter-plays{padding:4px 16px 16px}
+.bp-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--g100);font-size:13px}
+.bp-item:last-child{border-bottom:none}
+.bp-inn{font-size:11px;color:var(--g400);min-width:42px;flex-shrink:0}
+.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:599;display:none}
+.popup-overlay.show{display:block}
+[data-theme="dark"] .batter-popup{background:#1a1e35}
+
+/* ── Error modal ── */
+.error-pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.ep-btn{padding:9px 4px;border-radius:var(--r-md);border:1.5px solid var(--g200);background:var(--white);font-size:11px;font-weight:600;cursor:pointer;text-align:center;color:var(--g600);transition:all .15s;min-height:38px}
+.ep-btn.sel{border-color:var(--red);background:var(--red);color:#fff}
 </style>
 </head>
 <body>
@@ -748,22 +778,41 @@ body.is-offline .main{margin-top:32px}
 <div class="modal-bg" id="modal-juego">
   <div class="modal" style="max-width:460px">
     <div class="modal-title">📅 Agregar Juego</div>
-    <!-- Tipo -->
-    <div style="display:flex;gap:6px;margin-bottom:14px">
-      <button id="tipo-oficial" onclick="setTipoJuego('oficial')"
-        style="flex:1;padding:8px;border-radius:var(--r-md);border:1.5px solid var(--navy);background:var(--navy);color:#fff;font-size:12px;font-weight:700;cursor:pointer">
-        🏆 Oficial
-      </button>
-      <button id="tipo-amistoso" onclick="setTipoJuego('amistoso')"
-        style="flex:1;padding:8px;border-radius:var(--r-md);border:1.5px solid var(--g200);background:var(--white);color:var(--g600);font-size:12px;font-weight:700;cursor:pointer">
-        🤝 Amistoso
-      </button>
-      <button id="tipo-practica" onclick="setTipoJuego('practica')"
-        style="flex:1;padding:8px;border-radius:var(--r-md);border:1.5px solid var(--g200);background:var(--white);color:var(--g600);font-size:12px;font-weight:700;cursor:pointer">
-        🏋️ Práctica
-      </button>
+    <!-- Deporte -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+      <div>
+        <label class="form-label">Deporte</label>
+        <div style="display:flex;gap:5px">
+          <button id="dep-softbol" onclick="setDeporte('softbol')"
+            style="flex:1;padding:7px 4px;border-radius:var(--r-md);border:1.5px solid var(--navy);background:var(--navy);color:#fff;font-size:11px;font-weight:700;cursor:pointer">
+            🥎 Softbol (7)
+          </button>
+          <button id="dep-beisbol" onclick="setDeporte('beisbol')"
+            style="flex:1;padding:7px 4px;border-radius:var(--r-md);border:1.5px solid var(--g200);background:var(--white);color:var(--g600);font-size:11px;font-weight:700;cursor:pointer">
+            ⚾ Béisbol (9)
+          </button>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Tipo de juego</label>
+        <div style="display:flex;gap:5px">
+          <button id="tipo-oficial" onclick="setTipoJuego('oficial')"
+            style="flex:1;padding:7px 4px;border-radius:var(--r-md);border:1.5px solid var(--navy);background:var(--navy);color:#fff;font-size:11px;font-weight:700;cursor:pointer">
+            🏆 Oficial
+          </button>
+          <button id="tipo-amistoso" onclick="setTipoJuego('amistoso')"
+            style="flex:1;padding:7px 4px;border-radius:var(--r-md);border:1.5px solid var(--g200);background:var(--white);color:var(--g600);font-size:11px;font-weight:700;cursor:pointer">
+            🤝 Amistoso
+          </button>
+          <button id="tipo-practica" onclick="setTipoJuego('practica')"
+            style="flex:1;padding:7px 4px;border-radius:var(--r-md);border:1.5px solid var(--g200);background:var(--white);color:var(--g600);font-size:11px;font-weight:700;cursor:pointer">
+            🏋️ Práctica
+          </button>
+        </div>
+      </div>
     </div>
     <input type="hidden" id="juego-tipo" value="oficial">
+    <input type="hidden" id="juego-deporte" value="softbol">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="form-row">
         <label class="form-label">Fecha</label>
@@ -800,6 +849,116 @@ body.is-offline .main{margin-top:32px}
       <button class="btn btn-sm" onclick="closeModal('modal-juego')">Cancelar</button>
       <button class="btn btn-sm" onclick="saveJuego(false)" style="flex:1">💾 Solo guardar</button>
       <button class="btn btn-red btn-sm" onclick="saveJuego(true)" style="flex:1">🔴 Guardar e iniciar ahora</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Lineup / Alineación antes del juego -->
+<div class="modal-bg" id="modal-lineup">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title" id="lineup-title">⚾ Alineación del juego</div>
+    <div style="font-size:12px;color:var(--g400);margin-bottom:14px" id="lineup-subtitle">Confirma el lineup antes de iniciar</div>
+    <!-- Tabs equipos -->
+    <div style="display:flex;gap:4px;margin-bottom:14px;background:var(--g100);border-radius:var(--r-md);padding:4px">
+      <button id="lineup-tab-local" onclick="switchLineupTab('local')"
+        style="flex:1;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:var(--navy);color:#fff;transition:all .15s" id="lineup-tab-local">
+        🏠 <span id="lineup-tab-local-name">Local</span>
+      </button>
+      <button id="lineup-tab-vis" onclick="switchLineupTab('visitante')"
+        style="flex:1;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--g600);transition:all .15s">
+        ✈️ <span id="lineup-tab-vis-name">Visitante</span>
+      </button>
+    </div>
+    <!-- Pitcher selector -->
+    <div style="background:var(--off);border:1px solid var(--g200);border-radius:var(--r-md);padding:11px 13px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--navy);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px">⚾ Pitcher abridor</div>
+      <select class="form-input sel" id="lineup-pitcher" style="width:100%"></select>
+    </div>
+    <!-- Orden al bate -->
+    <div style="font-size:11px;font-weight:700;color:var(--navy);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px">
+      📋 Orden al bate <span style="font-size:10px;font-weight:400;color:var(--g400)">(toca una jugadora para cambiar posición o turno)</span>
+    </div>
+    <div id="lineup-grid" style="display:flex;flex-direction:column;gap:5px;max-height:320px;overflow-y:auto"></div>
+    <!-- No hay jugadoras -->
+    <div id="lineup-empty" style="display:none;text-align:center;padding:24px;color:var(--g400)">
+      <div style="font-size:24px;margin-bottom:7px">👥</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:5px">Sin jugadoras cargadas</div>
+      <div style="font-size:12px">Conecta el backend y asegúrate de tener jugadoras en el roster</div>
+    </div>
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="btn btn-sm" onclick="closeModal('modal-lineup')">Cancelar</button>
+      <button class="btn btn-red btn-sm" style="flex:1" onclick="confirmarLineupYIniciar()">🔴 ¡Jugar!</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Editar posición en lineup -->
+<div class="modal-bg" id="modal-lineup-pos">
+  <div class="modal" style="max-width:320px">
+    <div class="modal-title" id="lpos-title">Posición en el juego</div>
+    <input type="hidden" id="lpos-jug-id">
+    <input type="hidden" id="lpos-equipo">
+    <div class="form-row">
+      <label class="form-label">Posición defensiva</label>
+      <select class="form-input sel" id="lpos-pos">
+        <option value="P">P — Pitcher</option>
+        <option value="C">C — Catcher</option>
+        <option value="1B">1B — Primera base</option>
+        <option value="2B">2B — Segunda base</option>
+        <option value="3B">3B — Tercera base</option>
+        <option value="SS">SS — Shortstop</option>
+        <option value="LF">LF — Left Field</option>
+        <option value="CF">CF — Center Field</option>
+        <option value="RF">RF — Right Field</option>
+        <option value="DH">DH — Designated Hitter</option>
+        <option value="BN">BN — Banca (no juega)</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Turno al bate</label>
+      <select class="form-input sel" id="lpos-turno">
+        <option value="0">No batea (pitcher/banca)</option>
+        <option value="1">1° turno</option>
+        <option value="2">2° turno</option>
+        <option value="3">3° turno</option>
+        <option value="4">4° turno (4to bate / cleanup)</option>
+        <option value="5">5° turno</option>
+        <option value="6">6° turno</option>
+        <option value="7">7° turno</option>
+        <option value="8">8° turno</option>
+        <option value="9">9° turno</option>
+        <option value="10">10° turno</option>
+        <option value="11">11° turno</option>
+        <option value="12">12° turno</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="closeModal('modal-lineup-pos')">Cancelar</button>
+      <button class="btn btn-navy btn-sm" onclick="saveLineupPos()">✅ Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Extra inning — corredor en 2da -->
+<div class="modal-bg" id="modal-extra">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title">⚡ Entrada Extra</div>
+    <div style="font-size:13px;color:var(--g600);margin-bottom:14px" id="extra-subtitle">
+      Empate al final de la entrada regular. Regla de desempate:
+    </div>
+    <div style="background:var(--off);border:1px solid var(--g200);border-radius:var(--r-md);padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px">🏃 Corredor en 2da base</div>
+      <div style="font-size:12px;color:var(--g600);margin-bottom:10px">El último out de la entrada anterior inicia en segunda base sin lanzamientos.</div>
+      <label class="form-label">Selecciona el corredor (último out)</label>
+      <select class="form-input sel" id="extra-corredor-local" style="width:100%;margin-bottom:8px"></select>
+      <select class="form-input sel" id="extra-corredor-vis" style="width:100%;display:none"></select>
+    </div>
+    <div style="font-size:11px;color:var(--g400);margin-bottom:14px" id="extra-info">
+      Inning <span id="extra-num">8</span> — batea el equipo <span id="extra-equipo">visitante</span> primero (Alta)
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="closeModal('modal-extra')">Cancelar</button>
+      <button class="btn btn-navy btn-sm" onclick="confirmarExtraInning()">▶ Iniciar entrada extra</button>
     </div>
   </div>
 </div>
@@ -933,6 +1092,107 @@ body.is-offline .main{margin-top:32px}
   </div>
 </div>
 
+<!-- Batter stats popup overlay -->
+<div class="popup-overlay" id="popup-overlay" onclick="closeBatterPopup()"></div>
+<div class="batter-popup" id="batter-popup">
+  <div class="batter-popup-drag"></div>
+  <div class="batter-popup-hdr">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div class="batter-popup-name" id="bp-name">—</div>
+        <div class="batter-popup-sub" id="bp-sub">En juego</div>
+      </div>
+      <button onclick="closeBatterPopup()" style="background:none;border:none;font-size:20px;color:var(--g400);cursor:pointer;padding:4px">✕</button>
+    </div>
+  </div>
+  <!-- Stats en el juego -->
+  <div class="batter-stat-row">
+    <div class="bst"><div class="bstv" id="bp-ab">0</div><div class="bstl">AB</div></div>
+    <div class="bst"><div class="bstv" id="bp-h">0</div><div class="bstl">H</div></div>
+    <div class="bst"><div class="bstv" id="bp-rbi">0</div><div class="bstl">RBI</div></div>
+    <div class="bst"><div class="bstv" id="bp-avg" style="color:var(--red)">—</div><div class="bstl">AVG juego</div></div>
+  </div>
+  <!-- Línea de jugadas en el juego -->
+  <div class="batter-plays">
+    <div style="font-size:10px;font-weight:700;color:var(--g600);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;padding-top:4px">Historial en este juego</div>
+    <div id="bp-plays">
+      <div style="text-align:center;padding:16px;color:var(--g400);font-size:12px">Sin turnos al bate aún</div>
+    </div>
+  </div>
+  <!-- Corredores en base -->
+  <div style="padding:0 16px 16px">
+    <div style="font-size:10px;font-weight:700;color:var(--g600);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Carreras producidas por turno</div>
+    <div id="bp-runners" style="font-size:12px;color:var(--g400)">Sin carreras anotadas</div>
+  </div>
+</div>
+
+<!-- Modal: Registrar Error -->
+<div class="modal-bg" id="modal-error">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title">⚠️ Registrar Error</div>
+    <div style="font-size:12px;color:var(--g400);margin-bottom:14px">El bateador llega a base por error defensivo. Selecciona los detalles:</div>
+    <!-- Equipo que comete el error -->
+    <div class="form-row">
+      <label class="form-label">Equipo que comete el error</label>
+      <select class="form-input sel" id="err-equipo">
+        <option value="local">Local (campo)</option>
+        <option value="visitante">Visitante (campo)</option>
+      </select>
+    </div>
+    <!-- Tipo de error -->
+    <label class="form-label">Tipo de error</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+      <button class="ep-btn sel" id="err-tipo-fildeo" onclick="selErrTipo('fildeo',this)">🧤 Fildeo</button>
+      <button class="ep-btn" id="err-tipo-tiro" onclick="selErrTipo('tiro',this)">💨 Tiro</button>
+      <button class="ep-btn" id="err-tipo-recepcion" onclick="selErrTipo('recepcion',this)">🙌 Recepción</button>
+    </div>
+    <input type="hidden" id="err-tipo-val" value="fildeo">
+    <!-- Posición que comete el error -->
+    <label class="form-label">Jugador que comete el error</label>
+    <div class="error-pos-grid" id="err-pos-grid">
+      <button class="ep-btn" onclick="selErrPos('P',this)">1 — P</button>
+      <button class="ep-btn" onclick="selErrPos('C',this)">2 — C</button>
+      <button class="ep-btn" onclick="selErrPos('1B',this)">3 — 1B</button>
+      <button class="ep-btn" onclick="selErrPos('2B',this)">4 — 2B</button>
+      <button class="ep-btn" onclick="selErrPos('3B',this)">5 — 3B</button>
+      <button class="ep-btn" onclick="selErrPos('SS',this)">6 — SS</button>
+      <button class="ep-btn" onclick="selErrPos('LF',this)">7 — LF</button>
+      <button class="ep-btn" onclick="selErrPos('CF',this)">8 — CF</button>
+      <button class="ep-btn" onclick="selErrPos('RF',this)">9 — RF</button>
+    </div>
+    <input type="hidden" id="err-pos-val" value="">
+    <!-- Dirección del tiro (visible solo para tiro/recepcion) -->
+    <div id="err-direccion-row" style="display:none">
+      <label class="form-label">Dirigido a / hacia</label>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px">
+        <button class="ep-btn" onclick="selErrDir('1B',this)">1B</button>
+        <button class="ep-btn" onclick="selErrDir('2B',this)">2B</button>
+        <button class="ep-btn" onclick="selErrDir('3B',this)">3B</button>
+        <button class="ep-btn" onclick="selErrDir('HP',this)">HP</button>
+        <button class="ep-btn" onclick="selErrDir('CF',this)">CF</button>
+        <button class="ep-btn" onclick="selErrDir('LF',this)">LF</button>
+        <button class="ep-btn" onclick="selErrDir('RF',this)">RF</button>
+        <button class="ep-btn" onclick="selErrDir('FUL',this)">Foul</button>
+      </div>
+    </div>
+    <input type="hidden" id="err-dir-val" value="">
+    <!-- RBI en la jugada de error -->
+    <div class="form-row">
+      <label class="form-label">¿Anotaron carreras en el error?</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-sm" onclick="adjErrRbi(-1)">−</button>
+        <span id="err-rbi-val" style="font-family:var(--fd);font-size:22px;font-weight:800;color:var(--navy);min-width:28px;text-align:center">0</span>
+        <button class="btn btn-sm" onclick="adjErrRbi(1)">+</button>
+      </div>
+    </div>
+    <input type="hidden" id="err-rbi-hidden" value="0">
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="closeModal('modal-error')">Cancelar</button>
+      <button class="btn btn-red btn-sm" onclick="confirmarError()">⚠️ Registrar error</button>
+    </div>
+  </div>
+</div>
+
   <!-- ANOTAR EN VIVO -->
   <div class="page" id="pg-live">
     <div class="live-banner">
@@ -942,7 +1202,10 @@ body.is-offline .main{margin-top:32px}
         <div class="lbd"><span class="lbd-dot"></span>LOCAL</div>
       </div>
       <div class="lc2">
-        <div class="lvs">EN VIVO</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px">
+          <div class="lvs" id="live-tipo-badge">EN VIVO</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4)" id="live-innings-info">7 entradas</div>
+        </div>
         <div class="lin" id="live-inning-num">1°</div>
         <div class="lil" id="live-inning-lbl">▲ Alta · 0 outs</div>
         <svg class="dmnd" viewBox="0 0 72 72">
@@ -960,11 +1223,19 @@ body.is-offline .main{margin-top:32px}
     </div>
     <div class="scg">
       <div>
-        <div class="bt-card">
-          <div class="bt-num" id="bt-num">#1</div>
-          <div><div class="bt-name" id="bt-name">Turno al bate</div><div class="bt-det" id="bt-det">Selecciona jugadora</div></div>
-          <div class="bt-avg" id="bt-avg">—</div>
+        <div class="bt-card" onclick="showBatterPopup()" style="cursor:pointer" title="Toca para ver estadísticas">
+          <div class="bt-num" id="bt-num">#—</div>
+          <div style="flex:1;min-width:0">
+            <div class="bt-name" id="bt-name">Toca para seleccionar</div>
+            <div class="bt-det" id="bt-det">Bateadora al turno</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div class="bt-avg" id="bt-avg">—</div>
+            <div style="font-size:10px;color:var(--g400)">✏️ cambiar</div>
+          </div>
         </div>
+        <!-- Mini lineup strip -->
+        <div id="lineup-strip" style="display:flex;gap:4px;overflow-x:auto;margin-bottom:10px;-webkit-overflow-scrolling:touch;scrollbar-width:none"></div>
         <div class="cnt-row">
           <div class="cb"><div class="cbl">Bolas</div><div class="cbv" id="cb-b">0</div><div class="cd-row"><div class="cd" id="b0"></div><div class="cd" id="b1"></div><div class="cd" id="b2"></div></div></div>
           <div class="cb"><div class="cbl">Strikes</div><div class="cbv" id="cb-s">0</div><div class="cd-row"><div class="cd" id="s0"></div><div class="cd" id="s1"></div></div></div>
@@ -993,6 +1264,7 @@ body.is-offline .main{margin-top:32px}
           <button class="rb bb" onclick="regPlay('HBP')">HBP</button>
           <button class="rb" onclick="regPlay('FC')">FC</button>
           <button class="rb" onclick="regPlay('SAC')">SAC</button>
+          <button class="rb" onclick="openModal('modal-error')" style="border-color:var(--gold);color:var(--gold);grid-column:span 4;font-size:12px">⚠️ Error defensivo (E)</button>
         </div>
         <div class="rf mt4">
           <button class="btn btn-sm" style="flex:1" onclick="undoLastPlay()">↩ Deshacer</button>
@@ -1402,6 +1674,236 @@ async function confirmImport(){
   if(eqId) await loadRoster(eqId);
 }
 
+
+// ════════════════════════════════════════════════════
+// ESTADÍSTICAS DEL JUEGO (bateador popup + errores)
+// ════════════════════════════════════════════════════
+
+// In-game stats tracker: { playerId: { ab, h, rbi, bb, k, plays:[{inn,mitad,tipo,desc,rbi,runners}] } }
+const gameStats = {};
+
+function initPlayerStats(jId){
+  if(!jId) return;
+  if(!gameStats[jId]) gameStats[jId] = { ab:0, h:0, rbi:0, bb:0, k:0, plays:[] };
+}
+
+function recordStat(jugadoraId, tipo, rbi, inn, mitad, desc, runners){
+  initPlayerStats(jugadoraId);
+  if(!jugadoraId) return;
+  const s = gameStats[jugadoraId];
+  const isHit = ['1B','2B','3B','HR'].includes(tipo);
+  const isBB  = ['BB','HBP'].includes(tipo);
+  const isK   = tipo==='K';
+  const noAB  = ['BB','HBP','SAC'].includes(tipo);
+  if(!noAB) s.ab++;
+  if(isHit) s.h++;
+  if(isK)   s.k++;
+  if(isBB)  s.bb++;
+  s.rbi += (rbi||0);
+  s.plays.push({ inn, mitad, tipo, desc:desc||'', rbi:rbi||0, runners:runners||[] });
+}
+
+// ── Batter popup ──
+function showBatterPopup(){
+  const j = lCurrentBatter;
+  if(!j){ openBatterSelector(); return; }
+  initPlayerStats(j.id);
+  const s = gameStats[j.id] || { ab:0, h:0, rbi:0, bb:0, k:0, plays:[] };
+  const avg = s.ab>0 ? (s.h/s.ab).toFixed(3) : '—';
+
+  // Header
+  document.getElementById('bp-name').textContent = '#'+(j.numero||'—')+' '+j.nombre;
+  document.getElementById('bp-sub').textContent  = j.posicion+(j.turno?' · Turno '+j.turno:'')+ ' · '+(lMitad==='alta'?( window._juegoActual?.visitante_nombre||'Visitante'):(window._juegoActual?.local_nombre||'Local'));
+  document.getElementById('bp-ab').textContent  = s.ab;
+  document.getElementById('bp-h').textContent   = s.h;
+  document.getElementById('bp-rbi').textContent = s.rbi;
+  document.getElementById('bp-avg').textContent = avg;
+
+  // Play history
+  const rcls2 = {'1B':'ah','2B':'ax','3B':'ax','HR':'ax','BB':'abb','HBP':'abb','K':'ao','GO':'ao','FO':'ao','LO':'ao','FC':'ah','SAC':'as2','E':'ao'};
+  const playsEl = document.getElementById('bp-plays');
+  if(!s.plays.length){
+    playsEl.innerHTML='<div style="text-align:center;padding:16px;color:var(--g400);font-size:12px">Sin turnos al bate aún</div>';
+  } else {
+    playsEl.innerHTML = s.plays.map(p=>`
+      <div class="bp-item">
+        <span class="bp-inn">Inn ${p.inn} ${p.mitad==='alta'?'▲':'▼'}</span>
+        <span class="ab ${rcls2[p.tipo]||''}" style="flex-shrink:0">${p.tipo}</span>
+        <span style="flex:1;font-size:12px;color:var(--g600)">${p.desc||rdesc[p.tipo]||p.tipo}</span>
+        ${p.rbi>0?`<span style="font-size:11px;font-weight:700;color:var(--green)">${p.rbi} RBI</span>`:''}
+      </div>`).join('');
+  }
+
+  // Runners/carreras
+  const runnersEl = document.getElementById('bp-runners');
+  const allRbi = s.plays.filter(p=>p.rbi>0);
+  if(!allRbi.length){
+    runnersEl.innerHTML='<span style="color:var(--g400)">Sin carreras producidas</span>';
+  } else {
+    runnersEl.innerHTML = allRbi.map(p=>
+      `<div style="margin-bottom:4px">Inn ${p.inn}: <b>${p.rbi}</b> carrera${p.rbi>1?'s':''} con ${rdesc[p.tipo]||p.tipo}${p.runners?.length?' ('+p.runners.join(', ')+')':''}</div>`
+    ).join('');
+  }
+
+  // Show popup
+  document.getElementById('popup-overlay').classList.add('show');
+  document.getElementById('batter-popup').classList.add('show');
+}
+
+function closeBatterPopup(){
+  document.getElementById('popup-overlay').classList.remove('show');
+  document.getElementById('batter-popup').classList.remove('show');
+}
+
+function openBatterSelector(){
+  const isBatLocal = lMitad==='baja';
+  const lineup     = isBatLocal ? lLineupLocal : lLineupVisitante;
+  const batters    = lineup.filter(j=>j.turno>0).sort((a,b)=>a.turno-b.turno);
+  if(!batters.length){ toast('⚠️ Inicia el juego desde Calendario para cargar el lineup'); return; }
+  toast('👆 Toca una jugadora en la tira de lineup para cambiar');
+}
+
+// ── Corredor en base (scoring) ──
+// Track bases: { '1B': jugadoraId, '2B': jugadoraId, '3B': jugadoraId }
+const bases = { '1B': null, '2B': null, '3B': null };
+
+function advanceBases(tipo, batterid){
+  const scored = [];
+  if(tipo==='HR'){
+    // Everyone scores
+    ['1B','2B','3B'].forEach(b=>{ if(bases[b]) scored.push(bases[b]); bases[b]=null; });
+    scored.push(batterid); // batter scores too
+    return scored;
+  }
+  if(tipo==='1B'){
+    // Everyone advances 1 (simplified: runner on 3rd scores)
+    if(bases['3B']) scored.push(bases['3B']);
+    bases['3B'] = bases['2B'];
+    bases['2B'] = bases['1B'];
+    bases['1B'] = batterid;
+    return scored;
+  }
+  if(tipo==='2B'){
+    if(bases['3B']) scored.push(bases['3B']);
+    if(bases['2B']) scored.push(bases['2B']);
+    bases['3B'] = bases['1B'];
+    bases['2B'] = batterid;
+    bases['1B'] = null;
+    return scored;
+  }
+  if(tipo==='3B'){
+    ['1B','2B','3B'].forEach(b=>{ if(bases[b]) scored.push(bases[b]); bases[b]=null; });
+    bases['3B'] = batterid;
+    return scored;
+  }
+  if(['BB','HBP','FC'].includes(tipo)){
+    if(bases['1B']&&bases['2B']&&bases['3B']) scored.push(bases['3B']);
+    if(bases['1B']&&bases['2B']) bases['3B']=bases['2B'];
+    if(bases['1B']) bases['2B']=bases['1B'];
+    bases['1B'] = batterid;
+    return scored;
+  }
+  if(['K','GO','FO','LO','SAC'].includes(tipo)){
+    // Outs — clear applicable base (simplified)
+    return scored;
+  }
+  return scored;
+}
+
+function getRunnerNames(ids){
+  const all = [...lLineupLocal, ...lLineupVisitante];
+  return ids.map(id=>{ const j=all.find(x=>x.id===id); return j?j.nombre:'—'; });
+}
+
+// ── Error defensivo ──
+let _errTipo='fildeo', _errPos='', _errDir='', _errRbi=0;
+
+function selErrTipo(tipo, btn){
+  _errTipo = tipo;
+  document.getElementById('err-tipo-val').value=tipo;
+  document.querySelectorAll('[id^="err-tipo-"]').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  const dirRow = document.getElementById('err-direccion-row');
+  if(dirRow) dirRow.style.display = (tipo==='tiro'||tipo==='recepcion')?'block':'none';
+}
+function selErrPos(pos, btn){
+  _errPos = pos;
+  document.getElementById('err-pos-val').value=pos;
+  document.querySelectorAll('#err-pos-grid .ep-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+function selErrDir(dir, btn){
+  _errDir = dir;
+  document.getElementById('err-dir-val').value=dir;
+  document.querySelectorAll('#err-direccion-row .ep-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+function adjErrRbi(d){
+  _errRbi = Math.max(0,(_errRbi||0)+d);
+  document.getElementById('err-rbi-val').textContent=_errRbi;
+  document.getElementById('err-rbi-hidden').value=_errRbi;
+}
+
+async function confirmarError(){
+  const errEquipo = document.getElementById('err-equipo')?.value||'campo';
+  const errTipo   = document.getElementById('err-tipo-val')?.value||'fildeo';
+  const errPos    = document.getElementById('err-pos-val')?.value||'';
+  const errDir    = document.getElementById('err-dir-val')?.value||'';
+  const errRbi    = parseInt(document.getElementById('err-rbi-hidden')?.value)||0;
+
+  // Build description
+  const tipoLabel  = {fildeo:'Error de fildeo',tiro:'Error de tiro',recepcion:'Error de recepción'}[errTipo]||'Error';
+  const posLabel   = errPos ? `(${errPos})` : '';
+  const dirLabel   = errDir ? `→ ${errDir}` : '';
+  const desc       = `${tipoLabel} ${posLabel} ${dirLabel}`.trim();
+  const errCode    = `E${errPos?errPos.replace(/\D/g,''):''}`;
+
+  closeModal('modal-error');
+
+  // Record in game stats for current batter
+  const batterid = lCurrentBatter?.id;
+  initPlayerStats(batterid);
+  const runners = advanceBases('E', batterid);
+  recordStat(batterid, 'E', errRbi, lInning, lMitad, desc, getRunnerNames(runners));
+
+  // Update score if runners scored
+  if(errRbi>0){
+    const isBatLocal = lMitad==='baja';
+    if(isBatLocal) lLocalScore += errRbi;
+    else           lVisScore   += errRbi;
+    updLiveUI();
+  }
+
+  // Update errors counter in standing (just visual)
+  // Add to play log
+  const log = document.getElementById('play-log');
+  const li  = document.createElement('li');
+  li.className='pe';
+  li.innerHTML=
+    `<span class="pi">Inn ${lInning} ${lMitad==='alta'?'▲':'▼'}</span>`+
+    `<span class="ab ao" style="margin-right:7px">${errCode}</span>`+
+    `<span class="pr2">${lCurrentBatter?.nombre||'Bateadora'} — ${desc}${errRbi>0?' · '+errRbi+' carrera(s) anotan':''} ${isOnline?'':'📵'}</span>`+
+    `<span class="pp2">${lPitches} lanz.</span>`;
+  if(log.querySelector('li[style]')) log.innerHTML='';
+  log.insertBefore(li, log.firstChild);
+
+  lBalls=0;lStrikes=0;lFouls=0;lPitches=0;
+  updCount();
+  nextBatter();
+  updateBatterCard();
+  updateLineupStrip();
+
+  await queueOrPost({
+    action:'addJugada', juego_id:window._juegoId||'JUEGO_LOCAL',
+    inning:lInning, mitad:lMitad, tipo:'E',
+    descripcion:desc, error_tipo:errTipo, error_pos:errPos, error_dir:errDir,
+    bolas:lBalls,strikes:lStrikes,fouls:lFouls,lanzamientos:lPitches,
+    rbi:errRbi, anotaron:errRbi, outs_antes:lOuts,
+  });
+
+  toast(`⚠️ ${desc} registrado${errRbi>0?' · '+errRbi+' carrera(s)':''}`);
+}
+
 // ══ OFFLINE / INDEXEDDB ══
 let DB = null;
 let isOnline = navigator.onLine;
@@ -1490,6 +1992,17 @@ async function syncPending(){
 let lBalls=0,lStrikes=0,lFouls=0,lPitches=0;
 let lInning=1,lMitad='alta',lOuts=0,lTurno=1;
 let lLocalScore=0,lVisScore=0;
+// Game rules
+let lDeporte='softbol';       // softbol(7) | beisbol(9)
+let lInningsRegular=7;        // innings regulation
+let lUltimoOut=null;          // {id, nombre, equipo} for extra innings runner
+let lLineupLocal=[];          // [{id,nombre,numero,posicion,turno,enJuego}]
+let lLineupVisitante=[];      // same
+let lTurnoLocal=0;            // index in lineup
+let lTurnoVisitante=0;
+let lCurrentBatter=null;      // {id,nombre,numero,posicion,equipo}
+let lCurrentPitcherLocal=null;
+let lCurrentPitcherVis=null;
 const rdesc={
   '1B':'Sencillo','2B':'Doble','3B':'Triple','HR':'JONRÓN ⭐',
   'BB':'Base por bolas','HBP':'HBP','K':'Ponche',
@@ -1527,13 +2040,27 @@ async function addPitch(type){
 async function regPlay(r, detalle={}){
   // Update outs
   if(['K','GO','FO','LO'].includes(r)){
+    // Track last out for extra innings runner rule
+    lUltimoOut = lCurrentBatter ? {...lCurrentBatter, equipo: lMitad==='alta'?'visitante':'local'} : lUltimoOut;
     lOuts++;
     if(lOuts>=3){ lOuts=0; if(lMitad==='alta') lMitad='baja'; else{ lMitad='alta'; lInning++; } }
   }
-  // Update score for HR or RBI
-  const rbi = detalle.rbi || (r==='HR'?1:0);
-  if(rbi > 0) lLocalScore += rbi;
-  if(r==='HR') lLocalScore = Math.max(lLocalScore, lLocalScore); // ensure at least 1
+  // Determine RBI from detail or auto-calculate from base runners
+  const batterid   = lCurrentBatter?.id;
+  const isBatLocal = lMitad==='baja';
+  const runners    = advanceBases(r, batterid);
+  const autoRbi    = runners.length; // runners who scored
+  const rbi        = detalle.rbi !== undefined ? detalle.rbi : (r==='HR' ? runners.length : autoRbi);
+
+  // Update scoreboard
+  if(rbi > 0){
+    if(isBatLocal) lLocalScore += rbi;
+    else           lVisScore   += rbi;
+  }
+
+  // Record in game stats
+  const runnerNames = getRunnerNames(runners);
+  recordStat(batterid, r, rbi, lInning, lMitad, detalle.desc||'', runnerNames);
 
   // Build display label
   const descExtra = detalle.desc ? ` · ${detalle.desc}` : '';
@@ -1546,18 +2073,24 @@ async function regPlay(r, detalle={}){
   li.className='pe';
   li.innerHTML=`<span class="pi">Inn ${lInning} ${lMitad==='alta'?'▲':'▼'}</span>`+
     `<span class="ab ${rcls[r]||''}" style="margin-right:7px">${r}</span>`+
-    `<span class="pr2" style="min-width:0;overflow:hidden">Turno ${lTurno} — ${rdesc[r]||r}${descExtra}${rbiTxt} ${offIcon}</span>`+
+    `<span class="pr2" style="min-width:0;overflow:hidden">#${lCurrentBatter?.numero||'—'} ${lCurrentBatter?.nombre||'—'} — ${rdesc[r]||r}${descExtra}${rbiTxt} ${offIcon}</span>`+
     `<span class="pp2">${lPitches} lanz.</span>`;
   if(log.querySelector('li[style]')) log.innerHTML='';
   log.insertBefore(li,log.firstChild);
   lTurno++;
   lBalls=0;lStrikes=0;lFouls=0;lPitches=0;
   updCount(); updLiveUI();
+  // Auto-advance to next batter in lineup
+  nextBatter();
+  updateBatterCard();
+  updateLineupStrip();
 
   // Save offline-first with full detail
   await queueOrPost({
     action:       'addJugada',
     juego_id:     window._juegoId||'JUEGO_LOCAL',
+    jugadora_id:  lCurrentBatter?.id||'',
+    jugadora_nombre: lCurrentBatter?.nombre||'',
     inning:       lInning,
     mitad:        lMitad,
     tipo:         r,
@@ -1577,8 +2110,143 @@ async function regPlay(r, detalle={}){
 }
 
 function undoLastPlay(){ toast('↩ Deshacer — próximamente'); }
-function endInning(){ lOuts=0; if(lMitad==='alta') lMitad='baja'; else{ lMitad='alta'; lInning++; } updLiveUI(); toast('🔄 Cambio de lado · Inning '+lInning); }
-function endGame(){ toast('🏁 Juego terminado · Guardando resultado...'); }
+function endInning(){
+  lOuts=0;
+  if(lMitad==='alta'){
+    lMitad='baja';
+    updLiveUI();
+    advanceBatterInLineup('local');
+    toast('🔄 Cambio de lado — batea '+( window._juegoActual?.visitante_nombre||'Visitante'));
+  } else {
+    lMitad='alta';
+    lInning++;
+    updLiveUI();
+    advanceBatterInLineup('visitante');
+    // Check game end rules after each full inning
+    checkGameEnd();
+  }
+}
+
+function checkGameEnd(){
+  const innReg = lInningsRegular;
+  // WALK-OFF: bottom of last inning, home team ahead
+  if(lMitad==='baja' && lInning===innReg && lLocalScore > lVisScore){
+    autoEndGame('🏁 Walk-off! '+( window._juegoActual?.local_nombre||'Local')+' gana en la '+innReg+'a entrada');
+    return;
+  }
+  // END of regulation: finished last inning (both halves)
+  if(lInning > innReg){
+    if(lLocalScore !== lVisScore){
+      // Game over, someone won
+      autoEndGame('🏁 Juego terminado — '+innReg+' entradas');
+    } else {
+      // TIED — start extra innings
+      openExtraInning();
+    }
+    return;
+  }
+  // MERCY RULE: 10+ run difference after 5th inning (optional)
+  const diff = Math.abs(lLocalScore - lVisScore);
+  if(lInning > 5 && diff >= 10){
+    autoEndGame('🏁 Regla de misericordia — diferencia de '+diff+' carreras');
+    return;
+  }
+}
+
+function autoEndGame(msg){
+  const winner = lLocalScore > lVisScore
+    ? (window._juegoActual?.local_id||'')
+    : (window._juegoActual?.visitante_id||'');
+  toast(msg);
+  setTimeout(()=>endGame(winner), 800);
+}
+
+function openExtraInning(){
+  // Fill corredor selects from last out
+  const localList = lLineupLocal.filter(j=>j.enJuego&&j.turno>0);
+  const visList   = lLineupVisitante.filter(j=>j.enJuego&&j.turno>0);
+  const opts = (list) => list.map(j=>`<option value="${j.id}">#${j.numero||'—'} ${j.nombre}</option>`).join('');
+
+  const clEl = document.getElementById('extra-corredor-local');
+  const cvEl = document.getElementById('extra-corredor-vis');
+  if(clEl) clEl.innerHTML = opts(localList) || '<option>Sin jugadoras</option>';
+  if(cvEl) cvEl.innerHTML = opts(visList)   || '<option>Sin jugadoras</option>';
+
+  // Pre-select last out if known
+  if(lUltimoOut){
+    const isLocal = lUltimoOut.equipo === 'local';
+    const selEl   = isLocal ? clEl : cvEl;
+    if(selEl) for(let i=0;i<selEl.options.length;i++){
+      if(selEl.options[i].value===lUltimoOut.id){ selEl.selectedIndex=i; break; }
+    }
+  }
+
+  document.getElementById('extra-num').textContent  = lInning;
+  document.getElementById('extra-equipo').textContent = window._juegoActual?.visitante_nombre||'Visitante';
+  document.getElementById('extra-subtitle').textContent =
+    'Empate '+lLocalScore+'-'+lVisScore+' al final de '+lInningsRegular+' entradas.';
+
+  // Show correct corredor select (alta = visitante batea)
+  if(clEl) clEl.style.display = 'none';
+  if(cvEl) cvEl.style.display = 'block';
+
+  openModal('modal-extra');
+}
+
+function confirmarExtraInning(){
+  // Get corredor for the batting team (visitante bats first in extra - alta)
+  const isAlta   = lMitad==='alta';
+  const selEl    = isAlta
+    ? document.getElementById('extra-corredor-vis')
+    : document.getElementById('extra-corredor-local');
+  const corrId   = selEl?.value||'';
+  const corrNom  = selEl?.options[selEl?.selectedIndex]?.text||'Corredor';
+  closeModal('modal-extra');
+
+  // Register runner in play log
+  const log = document.getElementById('play-log');
+  const li  = document.createElement('li');
+  li.className='pe';
+  li.innerHTML=`<span class="pi" style="color:var(--gold);font-weight:700">Inn ${lInning} ${isAlta?'▲':'▼'}</span>`+
+    `<span class="ab ax" style="margin-right:7px">EXTRA</span>`+
+    `<span class="pr2">${corrNom} inicia en 2da base (regla entrada extra)</span>`;
+  log.insertBefore(li, log.firstChild);
+
+  // Save as jugada
+  queueOrPost({action:'addJugada',juego_id:window._juegoId||'',inning:lInning,mitad:lMitad,
+    tipo:'CORREDOR_2DA',descripcion:corrNom+' inicia en 2da (extra inning)',
+    bolas:0,strikes:0,fouls:0,lanzamientos:0,rbi:0,anotaron:0,outs_antes:0});
+
+  toast('⚡ Entrada extra '+lInning+' · '+corrNom+' en 2da base');
+}
+function endGame(winnerId){
+  const w = winnerId || (lLocalScore > lVisScore
+    ? (window._juegoActual?.local_id||'')
+    : lVisScore > lLocalScore
+    ? (window._juegoActual?.visitante_id||'')
+    : '');
+  const wName = w===window._juegoActual?.local_id
+    ? window._juegoActual?.local_nombre||'Local'
+    : w===window._juegoActual?.visitante_id
+    ? window._juegoActual?.visitante_nombre||'Visitante'
+    : 'Empate';
+  queueOrPost({
+    action:'finalizarJuego',
+    id: window._juegoId||'',
+    carreras_local: lLocalScore,
+    carreras_visitante: lVisScore,
+    hits_local:0, hits_visitante:0,
+    errores_local:0, errores_visitante:0,
+    ganador_id: w,
+  });
+  // Update local _juegos cache
+  const jIdx = _juegos.findIndex(j=>j.id===window._juegoId);
+  if(jIdx>=0){ _juegos[jIdx].estado='finalizado'; _juegos[jIdx].carreras_local=lLocalScore; _juegos[jIdx].carreras_visitante=lVisScore; }
+  const banner = document.getElementById('active-game-banner');
+  if(banner) banner.style.display='none';
+  toast('🏁 Juego finalizado · '+( lLocalScore)+'-'+(lVisScore)+(wName!=='Empate'?' · Gana '+wName:'· Empate'));
+  renderCalendar();
+}
 
 // ══ STANDINGS ══
 let currentCat=0;
@@ -2025,7 +2693,7 @@ async function saveJuego(iniciarAhora=false){
     action: 'addJuego',
     fecha, hora, cancha, categoria: cat,
     local_id: localId, visitante_id: visitanteId,
-    jornada, tipo,
+    jornada, tipo, deporte: document.getElementById('juego-deporte')?.value||'softbol',
     estado: 'programado',
   });
 
@@ -2040,7 +2708,7 @@ async function saveJuego(iniciarAhora=false){
       local_nombre: localName, visitante_nombre: visitanteName,
       carreras_local: 0, carreras_visitante: 0,
       estado: iniciarAhora ? 'en_vivo' : 'programado',
-      jornada, tipo,
+      jornada, tipo, deporte: document.getElementById('juego-deporte')?.value||'softbol',
     });
     renderCalendar();
     toast((res.offline?'📵':'✅')+' Juego '+localName+' vs '+visitanteName+' guardado');
@@ -2057,7 +2725,19 @@ async function saveJuego(iniciarAhora=false){
 }
 
 function iniciarJuego(juego){
-  // Set global game state
+  // Store game + deporte settings
+  window._pendingJuego = juego;
+  lDeporte        = juego.deporte||'softbol';
+  lInningsRegular = lDeporte==='beisbol'?9:7;
+  // Update live innings badge
+  const badge = document.getElementById('live-innings-info');
+  if(badge) badge.textContent = lInningsRegular+' entradas · '+(lDeporte==='softbol'?'🥎':'⚾');
+  // Show lineup modal first
+  openLineupModal(juego);
+}
+
+function doIniciarJuego(juego){
+  // Called after lineup confirmed
   window._juegoId      = juego.id;
   window._juegoActual  = juego;
   lLocalScore  = 0;
@@ -2082,10 +2762,7 @@ function iniciarJuego(juego){
   const log = document.getElementById('play-log');
   if(log) log.innerHTML='<li style="text-align:center;padding:18px;color:var(--g400);font-size:13px">Juego iniciado — anota la primera jugada</li>';
 
-  // Load lineups for cambio modal
-  if(juego.local_id && juego.visitante_id){
-    loadLineup(juego.local_id, juego.visitante_id).catch(()=>{});
-  }
+  // Lineups already loaded in openLineupModal
 
   // Mark game as in_vivo
   queueOrPost({ action:'updateJuego', id:juego.id, estado:'en_vivo', iniciado: new Date().toISOString() }).catch(()=>{});
@@ -2210,6 +2887,253 @@ function continuarJuego(id){
     go('live', null);
     toast('▶ Continuando '+j.local_nombre+' vs '+j.visitante_nombre);
   }
+}
+
+
+// ════════════════════════════════════════════════════
+// LINEUP / ALINEACIÓN
+// ════════════════════════════════════════════════════
+let _lineupTab='local';
+let _lineupEditId=null;
+
+function setDeporte(dep){
+  lDeporte        = dep;
+  lInningsRegular = dep==='softbol'?7:9;
+  document.getElementById('juego-deporte').value=dep;
+  ['softbol','beisbol'].forEach(d=>{
+    const btn=document.getElementById('dep-'+d);
+    if(!btn) return;
+    if(d===dep){ btn.style.background='var(--navy)'; btn.style.color='#fff'; btn.style.borderColor='var(--navy)'; }
+    else       { btn.style.background='var(--white)'; btn.style.color='var(--g600)'; btn.style.borderColor='var(--g200)'; }
+  });
+}
+
+async function openLineupModal(juego){
+  document.getElementById('lineup-title').textContent =
+    (lDeporte==='softbol'?'🥎':'⚾')+' Alineación — '+juego.tipo+' · '+(lInningsRegular)+' entradas';
+  document.getElementById('lineup-subtitle').textContent =
+    (juego.local_nombre||'Local')+' vs '+(juego.visitante_nombre||'Visitante');
+  document.getElementById('lineup-tab-local-name').textContent  = juego.local_nombre    ||'Local';
+  document.getElementById('lineup-tab-vis-name').textContent    = juego.visitante_nombre||'Visitante';
+
+  showLoading('Cargando alineaciones...');
+  const [lRes, vRes] = await Promise.all([
+    apiConnected() ? apiGet('getJugadoras',{equipo_id:juego.local_id})    : Promise.resolve(null),
+    apiConnected() ? apiGet('getJugadoras',{equipo_id:juego.visitante_id}): Promise.resolve(null),
+  ]);
+  hideLoading();
+
+  // Build lineups with default turno assignment
+  lLineupLocal     = buildDefaultLineup(lRes?.jugadoras||[], 'local');
+  lLineupVisitante = buildDefaultLineup(vRes?.jugadoras||[], 'visitante');
+
+  switchLineupTab('local');
+  openModal('modal-lineup');
+}
+
+function buildDefaultLineup(jugadoras, equipo){
+  const pos9 = ['P','C','1B','2B','3B','SS','LF','CF','RF'];
+  return jugadoras.map((j,i)=>({
+    id:       j.id,
+    nombre:   j.nombre,
+    numero:   j.numero||String(i+1),
+    posicion: j.posicion||pos9[i%9]||'BN',
+    batea:    j.batea||'D',
+    lanza:    j.lanza||'D',
+    equipo,
+    turno:    i < 9 ? i+1 : 0,   // first 9 bat in order, rest bench
+    enJuego:  i < 12,
+  }));
+}
+
+function switchLineupTab(tab){
+  _lineupTab=tab;
+  const localBtn = document.getElementById('lineup-tab-local');
+  const visBtn   = document.getElementById('lineup-tab-vis');
+  if(tab==='local'){
+    if(localBtn){ localBtn.style.background='var(--navy)'; localBtn.style.color='#fff'; }
+    if(visBtn)  { visBtn.style.background='transparent';   visBtn.style.color='var(--g600)'; }
+  } else {
+    if(visBtn)  { visBtn.style.background='var(--navy)';   visBtn.style.color='#fff'; }
+    if(localBtn){ localBtn.style.background='transparent'; localBtn.style.color='var(--g600)'; }
+  }
+  renderLineupGrid();
+}
+
+function renderLineupGrid(){
+  const lineup = _lineupTab==='local' ? lLineupLocal : lLineupVisitante;
+  const grid   = document.getElementById('lineup-grid');
+  const empty  = document.getElementById('lineup-empty');
+  const pitcherSel = document.getElementById('lineup-pitcher');
+
+  if(!lineup||!lineup.length){
+    if(grid)  grid.style.display='none';
+    if(empty) empty.style.display='block';
+    if(pitcherSel) pitcherSel.innerHTML='<option>Sin jugadoras</option>';
+    return;
+  }
+
+  if(empty) empty.style.display='none';
+  if(grid)  grid.style.display='flex';
+
+  // Pitcher selector
+  if(pitcherSel){
+    const pitchers = lineup.filter(j=>j.posicion==='P'||j.enJuego);
+    pitcherSel.innerHTML = pitchers.map(j=>`<option value="${j.id}" ${j.posicion==='P'?'selected':''}>
+      #${j.numero} ${j.nombre} (${j.posicion})
+    </option>`).join('');
+  }
+
+  // Sort: batters first by turno, bench last
+  const sorted = [...lineup].sort((a,b)=> a.turno===0?1:b.turno===0?-1:a.turno-b.turno);
+
+  grid.innerHTML = sorted.map(j=>{
+    const isBench   = j.turno===0||!j.enJuego;
+    const bgColor   = isBench ? 'var(--g100)' : 'var(--white)';
+    const txtColor  = isBench ? 'var(--g400)'  : 'var(--navy)';
+    const turnoBadge= isBench
+      ? '<span style="font-size:10px;color:var(--g400);background:var(--g100);padding:2px 6px;border-radius:4px">BN</span>'
+      : `<span style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--navy);width:22px;text-align:center">${j.turno}</span>`;
+    return `<div onclick="editLineupPos('${j.id}')" style="display:flex;align-items:center;gap:9px;background:${bgColor};border:1px solid var(--g200);border-radius:var(--r-md);padding:8px 11px;cursor:pointer;transition:all .12s">
+      ${turnoBadge}
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:13px;font-weight:800;color:#fff;flex-shrink:0">#${j.numero}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:${txtColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.nombre}</div>
+        <div style="font-size:11px;color:var(--g400)">B:${j.batea} · L:${j.lanza}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:12px;font-weight:700;color:var(--navy);background:var(--g100);padding:2px 8px;border-radius:4px">${j.posicion}</div>
+        <div style="font-size:10px;color:var(--g400);margin-top:2px">✏️</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editLineupPos(id){
+  const lineup = _lineupTab==='local' ? lLineupLocal : lLineupVisitante;
+  const j = lineup.find(x=>x.id===id);
+  if(!j) return;
+  _lineupEditId = id;
+  document.getElementById('lpos-title').textContent = '#'+j.numero+' '+j.nombre;
+  document.getElementById('lpos-jug-id').value  = id;
+  document.getElementById('lpos-equipo').value  = _lineupTab;
+  // Set position
+  const posEl=document.getElementById('lpos-pos');
+  for(let i=0;i<posEl.options.length;i++){ if(posEl.options[i].value===j.posicion){ posEl.selectedIndex=i; break; } }
+  // Set turno
+  const tEl=document.getElementById('lpos-turno');
+  for(let i=0;i<tEl.options.length;i++){ if(parseInt(tEl.options[i].value)===j.turno){ tEl.selectedIndex=i; break; } }
+  openModal('modal-lineup-pos');
+}
+
+function saveLineupPos(){
+  const id     = document.getElementById('lpos-jug-id').value;
+  const equipo = document.getElementById('lpos-equipo').value;
+  const pos    = document.getElementById('lpos-pos').value;
+  const turno  = parseInt(document.getElementById('lpos-turno').value)||0;
+  const lineup = equipo==='local' ? lLineupLocal : lLineupVisitante;
+  const j = lineup.find(x=>x.id===id);
+  if(j){ j.posicion=pos; j.turno=turno; j.enJuego=(pos!=='BN'&&turno>=0); }
+  closeModal('modal-lineup-pos');
+  renderLineupGrid();
+}
+
+function confirmarLineupYIniciar(){
+  // Get selected pitcher
+  const pitcherSel = document.getElementById('lineup-pitcher');
+  const pitLocal   = pitcherSel?.value||'';
+  // Save pitcher references
+  lCurrentPitcherLocal = lLineupLocal.find(j=>j.id===pitLocal)||lLineupLocal.find(j=>j.posicion==='P')||lLineupLocal[0]||null;
+  lCurrentPitcherVis   = lLineupVisitante.find(j=>j.posicion==='P')||lLineupVisitante[0]||null;
+
+  // Set first batter (visitante bats first - alta)
+  const firstVis = lLineupVisitante.filter(j=>j.turno>0).sort((a,b)=>a.turno-b.turno)[0]||null;
+  lCurrentBatter = firstVis;
+  lTurnoLocal    = 0;
+  lTurnoVisitante= 0;
+
+  closeModal('modal-lineup');
+  // Now actually start the game
+  const juego = window._pendingJuego;
+  if(juego) doIniciarJuego(juego);
+  updateBatterCard();
+  updateLineupStrip();
+}
+
+function updateBatterCard(){
+  const j = lCurrentBatter;
+  const numEl  = document.getElementById('bt-num');
+  const nameEl = document.getElementById('bt-name');
+  const detEl  = document.getElementById('bt-det');
+  const avgEl  = document.getElementById('bt-avg');
+  if(!j){
+    if(numEl)  numEl.textContent  = '#—';
+    if(nameEl) nameEl.textContent = 'Sin lineup cargado';
+    if(detEl)  detEl.textContent  = 'Ve a Calendario → Iniciar juego';
+    return;
+  }
+  if(numEl)  numEl.textContent  = '#'+(j.numero||'—');
+  if(nameEl) nameEl.textContent = j.nombre||'Jugadora';
+  const turnoInfo = j.turno ? 'Turno '+j.turno+' · ' : '';
+  if(detEl)  detEl.textContent  = turnoInfo+(j.posicion||'POS')+' · Batea '+( j.batea||'D');
+  if(avgEl)  avgEl.textContent  = '—';
+}
+
+function updateLineupStrip(){
+  const strip = document.getElementById('lineup-strip');
+  if(!strip) return;
+  // Show batting team lineup
+  const isBatLocal = lMitad==='baja';
+  const lineup     = isBatLocal ? lLineupLocal : lLineupVisitante;
+  const batters    = lineup.filter(j=>j.turno>0).sort((a,b)=>a.turno-b.turno);
+  if(!batters.length){ strip.innerHTML=''; return; }
+
+  const currentIdx = batters.findIndex(j=>j.id===lCurrentBatter?.id);
+  strip.innerHTML = batters.map((j,i)=>{
+    const isCur = j.id===lCurrentBatter?.id;
+    const isNxt = i===(currentIdx+1)%batters.length;
+    return `<div onclick="selectBatter('${j.id}')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 6px;border-radius:var(--r-sm);border:1.5px solid ${isCur?'var(--red)':isNxt?'var(--navy)':'var(--g200)'};background:${isCur?'var(--red)':isNxt?'rgba(26,43,139,.1)':'var(--white)'};cursor:pointer;min-width:38px">
+      <div style="font-family:var(--fd);font-size:11px;font-weight:800;color:${isCur?'#fff':isNxt?'var(--navy)':'var(--g400)'}">#${j.numero}</div>
+      <div style="font-size:9px;color:${isCur?'rgba(255,255,255,.8)':'var(--g400)'};white-space:nowrap;max-width:36px;overflow:hidden;text-overflow:ellipsis">${(j.nombre||'').split(' ')[0]}</div>
+      <div style="font-size:9px;font-weight:600;color:${isCur?'rgba(255,255,255,.7)':'var(--g600)'}">${j.posicion}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectBatter(id){
+  const isBatLocal = lMitad==='baja';
+  const lineup     = isBatLocal ? lLineupLocal : lLineupVisitante;
+  const j = lineup.find(x=>x.id===id);
+  if(j){ lCurrentBatter=j; updateBatterCard(); updateLineupStrip(); }
+}
+
+function openBatterSelector(){
+  const isBatLocal = lMitad==='baja';
+  const lineup     = isBatLocal ? lLineupLocal : lLineupVisitante;
+  const batters    = lineup.filter(j=>j.turno>0).sort((a,b)=>a.turno-b.turno);
+  if(!batters.length){ toast('⚠️ Inicia el juego desde Calendario para cargar el lineup'); return; }
+  // Quick select toast-style if lineup loaded
+  const names = batters.map((j,i)=>`${j.turno}. #${j.numero} ${j.nombre} (${j.posicion})`).join('\n');
+  toast('👆 Toca una jugadora en la tira de lineup');
+}
+
+function advanceBatterInLineup(teamJustFinishedBatting){
+  // After inning ends, advance batter index for next time that team bats
+  // (batter who made the 3rd out leads off next inning)
+  // This is tracked automatically via lCurrentBatter and lineup strips
+}
+
+
+function nextBatter(){
+  const isBatLocal = lMitad==='baja';
+  const lineup     = isBatLocal ? lLineupLocal : lLineupVisitante;
+  const batters    = lineup.filter(j=>j.turno>0).sort((a,b)=>a.turno-b.turno);
+  if(!batters.length) return;
+  const currentIdx = batters.findIndex(j=>j.id===lCurrentBatter?.id);
+  const nextIdx    = (currentIdx+1) % batters.length;
+  lCurrentBatter   = batters[nextIdx];
+  updateBatterCard();
+  updateLineupStrip();
 }
 
 // ════════════════════════════════════════════════════
