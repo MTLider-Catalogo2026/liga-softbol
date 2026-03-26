@@ -480,6 +480,9 @@ body.is-offline .main{margin-top:32px}
 .error-pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
 .ep-btn{padding:9px 4px;border-radius:var(--r-md);border:1.5px solid var(--g200);background:var(--white);font-size:11px;font-weight:600;cursor:pointer;text-align:center;color:var(--g600);transition:all .15s;min-height:38px}
 .ep-btn.sel{border-color:var(--red);background:var(--red);color:#fff}
+
+/* ── Diamond base highlight transition ── */
+#d-1b, #d-2b, #d-3b { transition: fill .25s ease, stroke .25s ease; }
 </style>
 </head>
 <body>
@@ -1769,45 +1772,79 @@ const bases = { '1B': null, '2B': null, '3B': null };
 
 function advanceBases(tipo, batterid){
   const scored = [];
+
   if(tipo==='HR'){
-    // Everyone scores
-    ['1B','2B','3B'].forEach(b=>{ if(bases[b]) scored.push(bases[b]); bases[b]=null; });
-    scored.push(batterid); // batter scores too
+    // Batter + all runners score
+    ['3B','2B','1B'].forEach(b=>{ if(bases[b]){ scored.push(bases[b]); bases[b]=null; } });
+    scored.push(batterid);
     return scored;
   }
-  if(tipo==='1B'){
-    // Everyone advances 1 (simplified: runner on 3rd scores)
-    if(bases['3B']) scored.push(bases['3B']);
-    bases['3B'] = bases['2B'];
-    bases['2B'] = bases['1B'];
-    bases['1B'] = batterid;
-    return scored;
+
+  if(tipo==='3B'){
+    // All runners score, batter goes to 3rd
+    ['3B','2B','1B'].forEach(b=>{ if(bases[b]){ scored.push(bases[b]); bases[b]=null; } });
+    bases['3B'] = batterid;
+    updDiamond(); return scored;
   }
+
   if(tipo==='2B'){
-    if(bases['3B']) scored.push(bases['3B']);
-    if(bases['2B']) scored.push(bases['2B']);
-    bases['3B'] = bases['1B'];
+    // Runner on 3rd scores, runner on 2nd scores, runner on 1st goes to 3rd
+    if(bases['3B']){ scored.push(bases['3B']); bases['3B']=null; }
+    if(bases['2B']){ scored.push(bases['2B']); bases['2B']=null; }
+    bases['3B'] = bases['1B'] || null; // runner on 1st advances to 3rd
     bases['2B'] = batterid;
     bases['1B'] = null;
-    return scored;
+    updDiamond(); return scored;
   }
-  if(tipo==='3B'){
-    ['1B','2B','3B'].forEach(b=>{ if(bases[b]) scored.push(bases[b]); bases[b]=null; });
-    bases['3B'] = batterid;
-    return scored;
-  }
-  if(['BB','HBP','FC'].includes(tipo)){
-    if(bases['1B']&&bases['2B']&&bases['3B']) scored.push(bases['3B']);
-    if(bases['1B']&&bases['2B']) bases['3B']=bases['2B'];
-    if(bases['1B']) bases['2B']=bases['1B'];
+
+  if(tipo==='1B'){
+    // Runner on 3rd scores; 2nd→3rd; 1st→2nd; batter to 1st
+    if(bases['3B']){ scored.push(bases['3B']); bases['3B']=null; }
+    bases['3B'] = bases['2B'] || null;
+    bases['2B'] = bases['1B'] || null;
     bases['1B'] = batterid;
+    updDiamond(); return scored;
+  }
+
+  if(tipo==='BB' || tipo==='HBP'){
+    // Force advance only if bases loaded or force-out chain
+    if(bases['1B'] && bases['2B'] && bases['3B']){
+      scored.push(bases['3B']); bases['3B']=null;
+      bases['3B']=bases['2B']; bases['2B']=bases['1B']; bases['1B']=batterid;
+    } else if(bases['1B'] && bases['2B']){
+      bases['3B']=bases['2B']; bases['2B']=bases['1B']; bases['1B']=batterid;
+    } else if(bases['1B']){
+      bases['2B']=bases['1B']; bases['1B']=batterid;
+    } else {
+      bases['1B']=batterid;
+    }
+    updDiamond(); return scored;
+  }
+
+  if(tipo==='FC'){
+    // Fielder's choice — batter reaches 1st, lead runner may be out (simplified: no score)
+    bases['1B'] = batterid;
+    updDiamond(); return scored;
+  }
+
+  if(tipo==='SAC'){
+    // Sacrifice fly/bunt — runner on 3rd scores if present, batter out
+    if(bases['3B']){ scored.push(bases['3B']); bases['3B']=bases['2B']||null; bases['2B']=bases['1B']||null; bases['1B']=null; }
+    updDiamond(); return scored;
+  }
+
+  if(['K','GO','FO','LO','E'].includes(tipo)){
+    // Out — no base advancement (simplified; E batter reaches 1st but was handled in confirmarError)
+    if(tipo==='E'){ bases['1B']=batterid; updDiamond(); }
     return scored;
   }
-  if(['K','GO','FO','LO','SAC'].includes(tipo)){
-    // Outs — clear applicable base (simplified)
-    return scored;
-  }
+
   return scored;
+}
+
+function clearBases(){
+  bases['1B']=null; bases['2B']=null; bases['3B']=null;
+  updDiamond();
 }
 
 function getRunnerNames(ids){
@@ -2027,6 +2064,23 @@ function updLiveUI(){
   const vs = document.getElementById('live-vis-score');
   if(ls) ls.textContent=lLocalScore;
   if(vs) vs.textContent=lVisScore;
+  // ── Highlight occupied bases on diamond ──
+  updDiamond();
+}
+
+function updDiamond(){
+  const EMPTY   = 'rgba(255,255,255,.1)';
+  const FULL    = 'rgba(232,160,32,.90)'; // gold = base occupied
+  const STROKE_E= 'rgba(255,255,255,.25)';
+  const STROKE_F= '#E8A020';
+  [['d-1b','1B'],['d-2b','2B'],['d-3b','3B']].forEach(([elId, base])=>{
+    const el = document.getElementById(elId);
+    if(!el) return;
+    const occ = !!bases[base];
+    el.setAttribute('fill',   occ ? FULL    : EMPTY);
+    el.setAttribute('stroke', occ ? STROKE_F: STROKE_E);
+    el.setAttribute('stroke-width', occ ? '2' : '1');
+  });
 }
 
 async function addPitch(type){
@@ -2043,14 +2097,23 @@ async function regPlay(r, detalle={}){
     // Track last out for extra innings runner rule
     lUltimoOut = lCurrentBatter ? {...lCurrentBatter, equipo: lMitad==='alta'?'visitante':'local'} : lUltimoOut;
     lOuts++;
-    if(lOuts>=3){ lOuts=0; if(lMitad==='alta') lMitad='baja'; else{ lMitad='alta'; lInning++; } }
+    if(lOuts>=3){
+      lOuts=0;
+      clearBases(); // ← clear bases when 3 outs
+      if(lMitad==='alta') lMitad='baja';
+      else{ lMitad='alta'; lInning++; }
+    }
   }
   // Determine RBI from detail or auto-calculate from base runners
   const batterid   = lCurrentBatter?.id;
   const isBatLocal = lMitad==='baja';
   const runners    = advanceBases(r, batterid);
-  const autoRbi    = runners.length; // runners who scored
-  const rbi        = detalle.rbi !== undefined ? detalle.rbi : (r==='HR' ? runners.length : autoRbi);
+  const autoRbi    = runners.length; // runners who actually scored per base tracking
+  // Use explicit detalle.rbi if set (manual override), otherwise use auto-calculated
+  // Exception: if detalle.rbi = 0 but we detected runners, trust auto (user may not have set RBI)
+  const rbi = (detalle.rbi !== undefined && detalle.rbi > 0)
+    ? detalle.rbi   // manual override wins
+    : autoRbi;      // auto-calculated from base runners
 
   // Update scoreboard
   if(rbi > 0){
@@ -2112,17 +2175,19 @@ async function regPlay(r, detalle={}){
 function undoLastPlay(){ toast('↩ Deshacer — próximamente'); }
 function endInning(){
   lOuts=0;
+  clearBases(); // ← clear all bases on inning change
   if(lMitad==='alta'){
     lMitad='baja';
+    // Switch to next batter in VISITANTE lineup (they bat in Baja)
+    setLineupCurrentBatter('visitante');
     updLiveUI();
-    advanceBatterInLineup('local');
     toast('🔄 Cambio de lado — batea '+( window._juegoActual?.visitante_nombre||'Visitante'));
   } else {
     lMitad='alta';
     lInning++;
+    // Switch to next batter in LOCAL lineup (they bat in Alta)
+    setLineupCurrentBatter('local');
     updLiveUI();
-    advanceBatterInLineup('visitante');
-    // Check game end rules after each full inning
     checkGameEnd();
   }
 }
@@ -2746,7 +2811,12 @@ function doIniciarJuego(juego){
   lMitad       = 'alta';
   lOuts        = 0;
   lTurno       = 1;
+  lTurnoLocal    = 0;
+  lTurnoVisitante= 0;
   lBalls=0; lStrikes=0; lFouls=0; lPitches=0;
+  clearBases();
+  // Reset game stats
+  Object.keys(gameStats).forEach(k=>delete gameStats[k]);
 
   // Update live banner names
   const ln = document.getElementById('live-local-name');
@@ -3048,9 +3118,11 @@ function confirmarLineupYIniciar(){
 
   // Set first batter (visitante bats first - alta)
   const firstVis = lLineupVisitante.filter(j=>j.turno>0).sort((a,b)=>a.turno-b.turno)[0]||null;
-  lCurrentBatter = firstVis;
+  // Visitante bats first (Alta = top of inning)
   lTurnoLocal    = 0;
   lTurnoVisitante= 0;
+  const firstVis2 = lLineupVisitante.filter(j=>j.turno>0).sort((a,b)=>a.turno-b.turno)[0]||null;
+  lCurrentBatter  = firstVis2;
 
   closeModal('modal-lineup');
   // Now actually start the game
@@ -3117,21 +3189,36 @@ function openBatterSelector(){
   toast('👆 Toca una jugadora en la tira de lineup');
 }
 
-function advanceBatterInLineup(teamJustFinishedBatting){
-  // After inning ends, advance batter index for next time that team bats
-  // (batter who made the 3rd out leads off next inning)
-  // This is tracked automatically via lCurrentBatter and lineup strips
+// ── Continuous batting order ──
+// lTurnoLocal / lTurnoVisitante store the INDEX (0-based) of the NEXT batter
+// They NEVER reset to 0 between innings — this ensures continuous order
+
+function setLineupCurrentBatter(equipo){
+  // Called when switching sides — sets the current batter to whoever is "up next"
+  const lineup  = equipo==='local' ? lLineupLocal : lLineupVisitante;
+  const batters = lineup.filter(j=>j.turno>0).sort((a,b)=>a.turno-b.turno);
+  if(!batters.length) return;
+  const idx = equipo==='local' ? lTurnoLocal : lTurnoVisitante;
+  lCurrentBatter = batters[idx % batters.length];
+  updateBatterCard();
+  updateLineupStrip();
 }
 
-
 function nextBatter(){
+  // Called after every plate appearance — advances the index for the batting team
   const isBatLocal = lMitad==='baja';
+  const equipo     = isBatLocal ? 'local' : 'visitante';
   const lineup     = isBatLocal ? lLineupLocal : lLineupVisitante;
   const batters    = lineup.filter(j=>j.turno>0).sort((a,b)=>a.turno-b.turno);
   if(!batters.length) return;
-  const currentIdx = batters.findIndex(j=>j.id===lCurrentBatter?.id);
-  const nextIdx    = (currentIdx+1) % batters.length;
-  lCurrentBatter   = batters[nextIdx];
+
+  if(isBatLocal){
+    lTurnoLocal = (lTurnoLocal + 1) % batters.length;
+    lCurrentBatter = batters[lTurnoLocal];
+  } else {
+    lTurnoVisitante = (lTurnoVisitante + 1) % batters.length;
+    lCurrentBatter  = batters[lTurnoVisitante];
+  }
   updateBatterCard();
   updateLineupStrip();
 }
