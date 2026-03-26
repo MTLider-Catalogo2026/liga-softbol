@@ -827,9 +827,9 @@ function setLogos() {
 }
 
 // ══ API CONFIG ══
-const API_URL = 'PEGA_TU_URL_AQUI';
+const API_URL = 'https://script.google.com/macros/s/AKfycbw_1efk21NN-OSWlhQupNAW_jzv8jbX2-t4U4h6Z0Ki_6vp7UD3UUE_zMT_T-jPHSN8dA/exec';
 function getApiUrl(){ return window._apiUrl || (API_URL !== 'PEGA_TU_URL_AQUI' ? API_URL : null); }
-function apiConnected(){ return !!getApiUrl(); }
+function apiConnected(){ return true; } // URL fija en código
 
 async function apiGet(action, params={}){
   const url = getApiUrl(); if(!url) return null;
