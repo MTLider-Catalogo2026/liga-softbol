@@ -444,6 +444,12 @@ body.is-offline .main{margin-top:32px}
 #preview-table th{background:var(--navy);color:#fff;padding:4px 8px;font-size:10px;font-weight:600;text-align:left}
 #preview-table td{padding:4px 8px;font-size:11px;border-bottom:1px solid var(--g100);color:var(--g600)}
 #preview-table tr:nth-child(even) td{background:var(--g100)}
+
+/* ── Cambio tabs ── */
+.cambio-tab-btn { transition: all .15s; }
+.cambio-tab-btn.active { background: var(--navy) !important; color: #fff !important; }
+.cambio-tab-btn:not(.active) { background: transparent !important; color: var(--g600) !important; }
+[data-theme="dark"] .cambio-tab-btn:not(.active) { color: var(--g400) !important; }
 </style>
 </head>
 <body>
@@ -575,18 +581,42 @@ body.is-offline .main{margin-top:32px}
 
 <div class="modal-bg" id="modal-jugadora">
   <div class="modal">
-    <div class="modal-title">👤 Alta de Jugadora</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-title" id="jug-modal-title" style="margin-bottom:0">👤 Alta de Jugadora</div>
+      <button id="jug-baja-btn" onclick="darDeBaja()" style="display:none;background:var(--red);border:none;color:#fff;border-radius:var(--r-md);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer">🗑️ Dar de baja</button>
+    </div>
+    <input type="hidden" id="jug-id" value="">
     <div class="form-row"><label class="form-label">Nombre completo</label><input class="form-input" placeholder="Nombre y apellido" id="jug-name"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="form-row"><label class="form-label"># Jersey</label><input class="form-input" placeholder="Ej: 7" id="jug-num" type="number"></div>
       <div class="form-row"><label class="form-label">Posición</label>
-        <select class="form-input sel" id="jug-pos"><option>P</option><option>C</option><option>1B</option><option>2B</option><option>3B</option><option>SS</option><option>LF</option><option>CF</option><option>RF</option><option>DH</option></select></div>
+        <select class="form-input sel" id="jug-pos">
+          <option>P</option><option>C</option><option>1B</option><option>2B</option>
+          <option>3B</option><option>SS</option><option>LF</option><option>CF</option>
+          <option>RF</option><option>DH</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-row"><label class="form-label">Batea</label>
+        <select class="form-input sel" id="jug-batea">
+          <option value="D">D — Derecha</option>
+          <option value="I">I — Izquierda</option>
+          <option value="S">S — Switch</option>
+        </select>
+      </div>
+      <div class="form-row"><label class="form-label">Lanza</label>
+        <select class="form-input sel" id="jug-lanza">
+          <option value="D">D — Derecha</option>
+          <option value="I">I — Izquierda</option>
+        </select>
+      </div>
     </div>
     <div class="form-row"><label class="form-label">Equipo</label><select class="form-input sel" id="jug-equipo"></select></div>
-    <div class="form-row"><label class="form-label">Categoría</label><select class="form-input sel" id="jug-cat"></select></div>
+    <div id="jug-cat-row" class="form-row"><label class="form-label">Categoría</label><select class="form-input sel" id="jug-cat"></select></div>
     <div class="modal-actions">
       <button class="btn btn-sm" onclick="closeModal('modal-jugadora')">Cancelar</button>
-      <button class="btn btn-navy btn-sm" onclick="saveJugadora()">✅ Registrar</button>
+      <button class="btn btn-navy btn-sm" id="jug-save-btn" onclick="saveJugadora()">✅ Registrar</button>
     </div>
   </div>
 </div>
@@ -713,6 +743,135 @@ body.is-offline .main{margin-top:32px}
     </div>
   </div>
 
+<!-- MODAL: Cambio en el juego -->
+<div class="modal-bg" id="modal-cambio">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title" id="cambio-title">🔄 Registrar Cambio</div>
+    <!-- Tabs -->
+    <div style="display:flex;gap:4px;margin-bottom:16px;background:var(--g100);border-radius:var(--r-md);padding:4px">
+      <button id="tab-pitcher" onclick="switchCambioTab('pitcher')"
+        style="flex:1;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:var(--navy);color:#fff;transition:all .15s">
+        ⚾ Cambio de Pitcher
+      </button>
+      <button id="tab-posicion" onclick="switchCambioTab('posicion')"
+        style="flex:1;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--g600);transition:all .15s">
+        🔄 Cambio de Posición
+      </button>
+      <button id="tab-jugadora" onclick="switchCambioTab('jugadora')"
+        style="flex:1;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--g600);transition:all .15s">
+        👤 Sustitución
+      </button>
+    </div>
+
+    <!-- PITCHER TAB -->
+    <div id="tab-content-pitcher">
+      <div class="form-row">
+        <label class="form-label">Equipo que hace el cambio</label>
+        <select class="form-input sel" id="cambio-equipo-p">
+          <option value="local">Local</option>
+          <option value="visitante">Visitante</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Pitcher que sale</label>
+        <select class="form-input sel" id="pitcher-sale"></select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Pitcher que entra (relevo)</label>
+        <select class="form-input sel" id="pitcher-entra"></select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Lanzamientos del pitcher saliente</label>
+        <input class="form-input" type="number" id="pitcher-lanz" placeholder="ej: 47" min="0">
+      </div>
+      <div style="font-size:11px;color:var(--g400);margin-top:-6px;margin-bottom:10px">
+        Innings lanzados se calculan automáticamente desde los outs registrados
+      </div>
+    </div>
+
+    <!-- POSICIÓN TAB -->
+    <div id="tab-content-posicion" style="display:none">
+      <div class="form-row">
+        <label class="form-label">Equipo</label>
+        <select class="form-input sel" id="cambio-equipo-pos">
+          <option value="local">Local</option>
+          <option value="visitante">Visitante</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Jugadora</label>
+        <select class="form-input sel" id="pos-jugadora"></select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Nueva posición</label>
+        <select class="form-input sel" id="pos-nueva">
+          <option value="P">P — Pitcher</option>
+          <option value="C">C — Catcher</option>
+          <option value="1B">1B — Primera base</option>
+          <option value="2B">2B — Segunda base</option>
+          <option value="3B">3B — Tercera base</option>
+          <option value="SS">SS — Shortstop</option>
+          <option value="LF">LF — Left Field</option>
+          <option value="CF">CF — Center Field</option>
+          <option value="RF">RF — Right Field</option>
+          <option value="DH">DH — Designated Hitter</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Posición anterior (para registro)</label>
+        <select class="form-input sel" id="pos-anterior">
+          <option value="P">P</option><option value="C">C</option>
+          <option value="1B">1B</option><option value="2B">2B</option>
+          <option value="3B">3B</option><option value="SS">SS</option>
+          <option value="LF">LF</option><option value="CF">CF</option>
+          <option value="RF">RF</option><option value="DH">DH</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- SUSTITUCIÓN TAB -->
+    <div id="tab-content-jugadora" style="display:none">
+      <div class="form-row">
+        <label class="form-label">Equipo</label>
+        <select class="form-input sel" id="cambio-equipo-s">
+          <option value="local">Local</option>
+          <option value="visitante">Visitante</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Jugadora que sale</label>
+        <select class="form-input sel" id="sust-sale"></select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Jugadora que entra</label>
+        <select class="form-input sel" id="sust-entra"></select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Posición en la que juega</label>
+        <select class="form-input sel" id="sust-pos">
+          <option value="P">P</option><option value="C">C</option>
+          <option value="1B">1B</option><option value="2B">2B</option>
+          <option value="3B">3B</option><option value="SS">SS</option>
+          <option value="LF">LF</option><option value="CF">CF</option>
+          <option value="RF">RF</option><option value="DH">DH</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">¿En qué turno del orden al bate entra?</label>
+        <input class="form-input" type="number" id="sust-turno" placeholder="ej: 4" min="1" max="15">
+      </div>
+    </div>
+
+    <div style="font-size:11px;color:var(--g400);padding:8px 0;border-top:1px solid var(--g200);margin-top:4px" id="cambio-nota">
+      El cambio queda registrado en el historial de jugadas con el inning actual.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="closeModal('modal-cambio')">Cancelar</button>
+      <button class="btn btn-navy btn-sm" onclick="confirmarCambio()">✅ Registrar cambio</button>
+    </div>
+  </div>
+</div>
+
   <!-- ANOTAR EN VIVO -->
   <div class="page" id="pg-live">
     <div class="live-banner">
@@ -779,6 +938,11 @@ body.is-offline .main{margin-top:32px}
           <button class="btn btn-sm btn-navy" style="flex:1" onclick="endInning()">Fin inning</button>
           <button class="btn btn-sm btn-red" style="flex:1" onclick="endGame()">🏁 Fin</button>
         </div>
+        <div style="margin-top:8px">
+          <button class="btn btn-sm" style="width:100%;background:var(--gold);border-color:var(--gold);color:#5a3a00;font-weight:700" onclick="openCambioModal()">
+            🔄 Registrar cambio (pitcher / posición / sustitución)
+          </button>
+        </div>
       </div>
     </div>
     <div class="card mt4">
@@ -794,10 +958,10 @@ body.is-offline .main{margin-top:32px}
       <select class="sel" id="ros-cat" onchange="onRosEquipoChange()"></select>
       <div class="sp"></div>
       <button class="btn btn-sm" onclick="openImportModal()">📥 Importar Excel</button>
-      <button class="btn btn-navy btn-sm" onclick="openModal('modal-jugadora')">+ Agregar</button>
+      <button class="btn btn-navy btn-sm" onclick="newJugadora()">+ Agregar</button>
     </div>
     <div class="pg" id="roster-grid">
-      <div class="plc plc-add" onclick="openModal('modal-jugadora')"><div style="font-size:26px;margin-bottom:5px">+</div><div style="font-size:12px;font-weight:500">Agregar jugadora</div></div>
+      <div class="plc plc-add" onclick="newJugadora()"><div style="font-size:26px;margin-bottom:5px">+</div><div style="font-size:12px;font-weight:500">Agregar jugadora</div></div>
     </div>
   </div>
 
@@ -1470,10 +1634,13 @@ async function loadRoster(eqId){
   if(!res||!res.jugadoras||!res.jugadoras.length){ renderEmptyRoster(); return; }
   const cols=['#D6E4FF','#FDDEDE','#D4EDDA','#FFF3CD','#E8E4F0','#F3E8FF'];
   const fgs= ['#1A2B8B','#7A1A1A','#155724','#856404','#4A3080','#6B21A8'];
+  // Store jugadoras for editing
+  window._rosterData = res.jugadoras;
   grid.innerHTML=res.jugadoras.map((j,i)=>{
     const ini=(j.nombre||'J').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'J'+(i+1);
     const ci=i%cols.length;
-    return `<div class="plc">
+    return `<div class="plc" onclick="openEditJugadora('${j.id}')" style="position:relative;cursor:pointer">
+      <div style="position:absolute;top:8px;right:8px;font-size:14px;opacity:.45">✏️</div>
       <div class="pav" style="background:${cols[ci]};color:${fgs[ci]}">${ini}</div>
       <div class="pnum">#${j.numero||'—'}</div>
       <div class="pname">${j.nombre}</div>
@@ -1484,7 +1651,7 @@ async function loadRoster(eqId){
         <div class="psi"><div class="psv">—</div><div class="psl">RBI</div></div>
       </div>
     </div>`;
-  }).join('')+`<div class="plc plc-add" onclick="openModal('modal-jugadora')"><div style="font-size:24px;margin-bottom:5px">+</div><div style="font-size:12px;font-weight:500">Agregar</div></div>`;
+  }).join('')+`<div class="plc plc-add" onclick="newJugadora()"><div style="font-size:24px;margin-bottom:5px">+</div><div style="font-size:12px;font-weight:500">Agregar</div></div>`;
 }
 function renderEmptyRoster(){
   const grid=document.getElementById('roster-grid'); if(!grid) return;
@@ -1637,15 +1804,269 @@ function saveDecreto(){
   toast('📜 Decreto publicado');
 }
 
+// ── Open modal in NEW mode ──
+function newJugadora(){
+  document.getElementById('jug-id').value='';
+  document.getElementById('jug-modal-title').textContent='👤 Alta de Jugadora';
+  document.getElementById('jug-save-btn').textContent='✅ Registrar';
+  document.getElementById('jug-baja-btn').style.display='none';
+  document.getElementById('jug-cat-row').style.display='block';
+  document.getElementById('jug-name').value='';
+  document.getElementById('jug-num').value='';
+  document.getElementById('jug-pos').value='P';
+  document.getElementById('jug-batea').value='D';
+  document.getElementById('jug-lanza').value='D';
+  openModal('modal-jugadora');
+}
+
+// ── Open modal in EDIT mode ──
+function openEditJugadora(id){
+  const j = (window._rosterData||[]).find(x=>x.id===id);
+  if(!j){ toast('⚠️ Jugadora no encontrada'); return; }
+  document.getElementById('jug-id').value=j.id;
+  document.getElementById('jug-modal-title').textContent='✏️ Editar Jugadora';
+  document.getElementById('jug-save-btn').textContent='💾 Guardar cambios';
+  document.getElementById('jug-baja-btn').style.display='inline-block';
+  document.getElementById('jug-cat-row').style.display='none'; // no cambiar categoría en edición
+  document.getElementById('jug-name').value=j.nombre||'';
+  document.getElementById('jug-num').value=j.numero||'';
+  // Set posición
+  const posEl=document.getElementById('jug-pos');
+  for(let i=0;i<posEl.options.length;i++){ if(posEl.options[i].value===j.posicion||posEl.options[i].text===j.posicion){ posEl.selectedIndex=i; break; } }
+  // Set batea
+  const btEl=document.getElementById('jug-batea');
+  for(let i=0;i<btEl.options.length;i++){ if(btEl.options[i].value===j.batea){ btEl.selectedIndex=i; break; } }
+  // Set lanza
+  const lzEl=document.getElementById('jug-lanza');
+  for(let i=0;i<lzEl.options.length;i++){ if(lzEl.options[i].value===j.lanza){ lzEl.selectedIndex=i; break; } }
+  // Set equipo
+  const eqEl=document.getElementById('jug-equipo');
+  for(let i=0;i<eqEl.options.length;i++){ if(eqEl.options[i].value===j.equipo_id){ eqEl.selectedIndex=i; break; } }
+  openModal('modal-jugadora');
+}
+
+// ── Save: create or update ──
 async function saveJugadora(){
-  const name=document.getElementById('jug-name').value||'Nueva Jugadora';
-  const num =document.getElementById('jug-num').value||'0';
-  const pos =document.getElementById('jug-pos').value;
-  const eq  =document.getElementById('jug-equipo').value;
-  const cat =document.getElementById('jug-cat').value;
+  const id   =document.getElementById('jug-id').value;
+  const name =document.getElementById('jug-name').value.trim()||'Nueva Jugadora';
+  const num  =document.getElementById('jug-num').value||'0';
+  const pos  =document.getElementById('jug-pos').value;
+  const batea=document.getElementById('jug-batea').value;
+  const lanza=document.getElementById('jug-lanza').value;
+  const eq   =document.getElementById('jug-equipo').value;
+  const cat  =document.getElementById('jug-cat').value;
   closeModal('modal-jugadora');
-  const res=await queueOrPost({action:'addJugadora',nombre:name,numero:num,posicion:pos,equipo_id:eq,categoria:cat,batea:'D',lanza:'D'});
-  toast((res?.offline?'📵':'✅')+' Jugadora '+name+' registrada');
+
+  if(id){
+    // UPDATE existing
+    const res=await queueOrPost({action:'updateJugadora',id,nombre:name,numero:num,posicion:pos,batea,lanza});
+    // Update local cache
+    if(window._rosterData){
+      const idx=window._rosterData.findIndex(x=>x.id===id);
+      if(idx>=0) Object.assign(window._rosterData[idx],{nombre:name,numero:num,posicion:pos,batea,lanza});
+    }
+    toast((res?.offline?'📵':'✅')+' '+name+' actualizada');
+    // Reload roster card
+    const rosEq=document.getElementById('ros-equipo');
+    const curEq=APP.teamsList.find(t=>t.name===rosEq?.options[rosEq?.selectedIndex]?.text||t.id===rosEq?.value);
+    if(curEq) await loadRoster(curEq.id);
+  } else {
+    // CREATE new
+    const res=await queueOrPost({action:'addJugadora',nombre:name,numero:num,posicion:pos,batea,lanza,equipo_id:eq,categoria:cat});
+    toast((res?.offline?'📵':'✅')+' '+name+' registrada');
+    if(eq) await loadRoster(eq);
+  }
+}
+
+// ── Dar de baja (soft delete) ──
+async function darDeBaja(){
+  const id  =document.getElementById('jug-id').value;
+  const name=document.getElementById('jug-name').value;
+  if(!id){ closeModal('modal-jugadora'); return; }
+  if(!confirm('¿Dar de baja a '+name+'? Su historial estadístico se conserva.')) return;
+  closeModal('modal-jugadora');
+  const res=await queueOrPost({action:'deleteJugadora',id});
+  toast((res?.offline?'📵':'✅')+' '+name+' dada de baja');
+  // Refresh roster
+  const rosEq=document.getElementById('ros-equipo');
+  const curEq=APP.teamsList.find(t=>t.name===rosEq?.options[rosEq?.selectedIndex]?.text||t.id===rosEq?.value);
+  if(curEq) await loadRoster(curEq.id);
+}
+
+
+// ════════════════════════════════════════════════════
+// CAMBIOS EN EL JUEGO (Pitcher / Posición / Sustitución)
+// ════════════════════════════════════════════════════
+
+let _currentCambioTab = 'pitcher';
+// Track lineup: { equipo: 'local'|'visitante', jugadoras: [{id, nombre, posicion, enJuego}] }
+window._lineupLocal    = [];
+window._lineupVisitante = [];
+
+function openCambioModal(){
+  // Populate pitcher/jugadora selects from current lineup
+  refreshCambioSelects();
+  switchCambioTab('pitcher');
+  openModal('modal-cambio');
+}
+
+function switchCambioTab(tab){
+  _currentCambioTab = tab;
+  ['pitcher','posicion','jugadora'].forEach(t=>{
+    const content = document.getElementById('tab-content-'+t);
+    const btn     = document.getElementById('tab-'+t);
+    if(content) content.style.display = t===tab ? 'block' : 'none';
+    if(btn){
+      if(t===tab){ btn.style.background='var(--navy)'; btn.style.color='#fff'; }
+      else       { btn.style.background='transparent'; btn.style.color='var(--g600)'; }
+    }
+  });
+}
+
+function refreshCambioSelects(){
+  const local    = window._lineupLocal    || [];
+  const visitante= window._lineupVisitante|| [];
+
+  // Helper: build <option> list from lineup array
+  const opts = (list) => list.length
+    ? list.map(j=>`<option value="${j.id}">#${j.numero||'—'} ${j.nombre} (${j.posicion||'POS'})</option>`).join('')
+    : '<option value="">— sin jugadoras cargadas —</option>';
+
+  const getList = (equipo) => equipo==='local' ? local : visitante;
+
+  // Pitcher selects — default local
+  const updatePitcherSelects = () => {
+    const eq  = document.getElementById('cambio-equipo-p')?.value || 'local';
+    const list= getList(eq);
+    const pitchers = list.length ? list : [];
+    const pOpts = pitchers.length
+      ? pitchers.map(j=>`<option value="${j.id}">#${j.numero||'—'} ${j.nombre}</option>`).join('')
+      : '<option>— sin jugadoras —</option>';
+    const sEl=document.getElementById('pitcher-sale');   if(sEl) sEl.innerHTML=pOpts;
+    const eEl=document.getElementById('pitcher-entra');  if(eEl) eEl.innerHTML=opts(list);
+  };
+  updatePitcherSelects();
+  document.getElementById('cambio-equipo-p')?.addEventListener('change', updatePitcherSelects);
+
+  // Posición selects
+  const updatePosSelects = () => {
+    const eq  = document.getElementById('cambio-equipo-pos')?.value || 'local';
+    const list= getList(eq);
+    const pEl = document.getElementById('pos-jugadora'); if(pEl) pEl.innerHTML=opts(list);
+  };
+  updatePosSelects();
+  document.getElementById('cambio-equipo-pos')?.addEventListener('change', updatePosSelects);
+
+  // Sustitución selects
+  const updateSustSelects = () => {
+    const eq   = document.getElementById('cambio-equipo-s')?.value || 'local';
+    const list = getList(eq);
+    const sEl  = document.getElementById('sust-sale');  if(sEl) sEl.innerHTML=opts(list);
+    const eEl  = document.getElementById('sust-entra'); if(eEl) eEl.innerHTML=opts(list);
+  };
+  updateSustSelects();
+  document.getElementById('cambio-equipo-s')?.addEventListener('change', updateSustSelects);
+}
+
+async function confirmarCambio(){
+  const tab    = _currentCambioTab;
+  const inning = lInning;
+  const mitad  = lMitad;
+  let desc='', tipo='';
+
+  if(tab==='pitcher'){
+    const eq       = document.getElementById('cambio-equipo-p')?.value;
+    const saleSel  = document.getElementById('pitcher-sale');
+    const entraSel = document.getElementById('pitcher-entra');
+    const lanz     = document.getElementById('pitcher-lanz')?.value||'?';
+    const saleNom  = saleSel?.options[saleSel?.selectedIndex]?.text  || '?';
+    const entranom = entraSel?.options[entraSel?.selectedIndex]?.text || '?';
+    tipo = 'CAMBIO_PITCHER';
+    desc = `Relevo: ${saleNom} → ${entranom} · ${lanz} lanz.`;
+
+    // Update local lineup tracker
+    const saleId  = saleSel?.value;
+    const entraId = entraSel?.value;
+    const lineup  = eq==='local' ? window._lineupLocal : window._lineupVisitante;
+    const saleIdx = lineup.findIndex(j=>j.id===saleId);
+    if(saleIdx>=0) lineup[saleIdx].posicion='EX-P'; // mark as out
+
+  } else if(tab==='posicion'){
+    const jugSel  = document.getElementById('pos-jugadora');
+    const posNueva= document.getElementById('pos-nueva')?.value||'?';
+    const posAntes= document.getElementById('pos-anterior')?.value||'?';
+    const jugNom  = jugSel?.options[jugSel?.selectedIndex]?.text || '?';
+    tipo = 'CAMBIO_POSICION';
+    desc = `${jugNom}: ${posAntes} → ${posNueva}`;
+
+    // Update lineup tracker
+    const eq     = document.getElementById('cambio-equipo-pos')?.value;
+    const jugId  = jugSel?.value;
+    const lineup = eq==='local' ? window._lineupLocal : window._lineupVisitante;
+    const idx    = lineup.findIndex(j=>j.id===jugId);
+    if(idx>=0) lineup[idx].posicion = posNueva;
+
+  } else if(tab==='jugadora'){
+    const eq       = document.getElementById('cambio-equipo-s')?.value;
+    const saleSel  = document.getElementById('sust-sale');
+    const entraSel = document.getElementById('sust-entra');
+    const posSust  = document.getElementById('sust-pos')?.value||'?';
+    const turno    = document.getElementById('sust-turno')?.value||'?';
+    const saleNom  = saleSel?.options[saleSel?.selectedIndex]?.text  || '?';
+    const entranom = entraSel?.options[entraSel?.selectedIndex]?.text || '?';
+    tipo = 'SUSTITUCION';
+    desc = `Sust: ${saleNom} sale · ${entranom} entra en ${posSust} (turno ${turno})`;
+
+    // Update lineup
+    const saleId  = saleSel?.value;
+    const entraId = entraSel?.value;
+    const lineup  = eq==='local' ? window._lineupLocal : window._lineupVisitante;
+    const saleIdx = lineup.findIndex(j=>j.id===saleId);
+    if(saleIdx>=0) lineup[saleIdx].enJuego = false;
+    // Mark new player
+    const entraIdx= lineup.findIndex(j=>j.id===entraId);
+    if(entraIdx>=0){ lineup[entraIdx].enJuego=true; lineup[entraIdx].posicion=posSust; }
+  }
+
+  closeModal('modal-cambio');
+
+  // Add to play log
+  const log = document.getElementById('play-log');
+  const li  = document.createElement('li');
+  li.className='pe';
+  const offIcon = isOnline?'':'📵';
+  li.innerHTML=
+    `<span class="pi" style="color:var(--gold);font-weight:700">Inn ${inning} ${mitad==='alta'?'▲':'▼'}</span>`+
+    `<span class="ab" style="margin-right:7px;background:var(--gold);color:#5a3a00;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">${tipo.replace('_',' ')}</span>`+
+    `<span class="pr2">${desc} ${offIcon}</span>`+
+    `<span class="pp2">Inn ${inning}</span>`;
+  if(log.querySelector('li[style]')) log.innerHTML='';
+  log.insertBefore(li, log.firstChild);
+
+  // Save to API
+  await queueOrPost({
+    action:       'addJugada',
+    juego_id:     window._juegoId||'JUEGO_LOCAL',
+    inning,
+    mitad,
+    tipo,
+    descripcion:  desc,
+    bolas:0, strikes:0, fouls:0, lanzamientos:0,
+    rbi:0, anotaron:0, outs_antes:lOuts,
+  });
+
+  toast('🔄 ' + desc);
+}
+
+// ── Load lineup from API when game starts ──
+async function loadLineup(localId, visitanteId){
+  if(!apiConnected()) return;
+  const [lRes, vRes] = await Promise.all([
+    apiGet('getJugadoras', {equipo_id: localId}),
+    apiGet('getJugadoras', {equipo_id: visitanteId}),
+  ]);
+  window._lineupLocal     = (lRes?.jugadoras || []).map(j=>({...j, enJuego:true}));
+  window._lineupVisitante = (vRes?.jugadoras || []).map(j=>({...j, enJuego:true}));
 }
 
 // ══ TOAST ══
