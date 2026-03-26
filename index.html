@@ -432,6 +432,18 @@ body.is-offline .main{margin-top:32px}
   .cat-tabs{padding:10px 12px 0}
   .sidebar{width:85vw;max-width:300px}
 }
+
+/* ── Detalle jugada ── */
+.det-btn{padding:8px 4px;border-radius:var(--r-md);border:1.5px solid var(--g200);background:var(--white);font-size:11px;font-weight:600;cursor:pointer;text-align:center;color:var(--g600);transition:all .15s;min-height:38px}
+.det-btn:hover,.det-btn.sel{border-color:var(--navy);background:var(--navy);color:#fff}
+.det-btn.sel-red{border-color:var(--red);background:var(--red);color:#fff}
+.det-btn.sel-green{border-color:var(--green);background:var(--green);color:#fff}
+/* Drop zone */
+#drop-zone:hover{border-color:var(--navy);background:var(--g100)}
+/* Preview table */
+#preview-table th{background:var(--navy);color:#fff;padding:4px 8px;font-size:10px;font-weight:600;text-align:left}
+#preview-table td{padding:4px 8px;font-size:11px;border-bottom:1px solid var(--g100);color:var(--g600)}
+#preview-table tr:nth-child(even) td{background:var(--g100)}
 </style>
 </head>
 <body>
@@ -470,6 +482,93 @@ body.is-offline .main{margin-top:32px}
     <div class="modal-actions">
       <button class="btn btn-sm" onclick="closeModal('modal-decreto')">Cancelar</button>
       <button class="btn btn-navy btn-sm" onclick="saveDecreto()">✅ Publicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Importar Roster desde Excel -->
+<!-- MODAL: Detalle de jugada -->
+<div class="modal-bg" id="modal-detalle">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title" id="det-title">Detalle de la jugada</div>
+    <div style="font-size:12px;color:var(--g600);margin-bottom:14px" id="det-subtitle"></div>
+    <!-- Zona del campo donde fue la jugada (hits) -->
+    <div id="det-zona-section">
+      <label class="form-label">¿Por dónde salió?</label>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px" id="det-zona-grid"></div>
+    </div>
+    <!-- Tipo de contacto -->
+    <div id="det-tipo-section">
+      <label class="form-label">Tipo de contacto</label>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px" id="det-tipo-grid"></div>
+    </div>
+    <!-- Jugada defensiva (outs) -->
+    <div id="det-def-section">
+      <label class="form-label">Jugada defensiva</label>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px" id="det-def-grid"></div>
+      <div id="det-custom-section" style="margin-top:6px">
+        <label class="form-label">O escribe la jugada (ej: 5-4-3, 6-3)</label>
+        <input class="form-input" id="det-custom-input" placeholder="ej: 5-3, 6-4-3, DP 4-6-3" style="font-size:13px">
+      </div>
+    </div>
+    <!-- Carreras anotadas -->
+    <div id="det-rbi-section" style="margin-top:10px">
+      <label class="form-label">RBI (carreras producidas)</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn btn-sm" onclick="adjRbi(-1)">−</button>
+        <span id="det-rbi-val" style="font-family:var(--fd);font-size:24px;font-weight:800;color:var(--navy);min-width:30px;text-align:center">0</span>
+        <button class="btn btn-sm" onclick="adjRbi(1)">+</button>
+        <span style="font-size:11px;color:var(--g400)">Carreras que anotaron en esta jugada</span>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn btn-sm" onclick="skipDetalle()">Omitir detalle</button>
+      <button class="btn btn-navy btn-sm" onclick="confirmDetalle()">✅ Registrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-import">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-title">📥 Importar Roster desde Excel</div>
+    <!-- Paso 1: Seleccionar equipo -->
+    <div class="form-row">
+      <label class="form-label">Equipo destino</label>
+      <select class="form-input sel" id="import-equipo"></select>
+    </div>
+    <!-- Plantilla descargable -->
+    <div style="background:var(--g100);border:1px solid var(--g200);border-radius:var(--r-md);padding:11px 13px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:6px">📋 Formato requerido del Excel</div>
+      <div style="font-size:11px;color:var(--g600);margin-bottom:8px">Tu archivo debe tener estas columnas en el siguiente orden:</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:8px">
+        <div style="background:var(--navy);color:#fff;font-size:10px;font-weight:700;padding:4px 6px;border-radius:4px;text-align:center">nombre</div>
+        <div style="background:var(--navy);color:#fff;font-size:10px;font-weight:700;padding:4px 6px;border-radius:4px;text-align:center">numero</div>
+        <div style="background:var(--navy);color:#fff;font-size:10px;font-weight:700;padding:4px 6px;border-radius:4px;text-align:center">posicion</div>
+        <div style="background:var(--navy);color:#fff;font-size:10px;font-weight:700;padding:4px 6px;border-radius:4px;text-align:center">batea</div>
+        <div style="background:var(--navy);color:#fff;font-size:10px;font-weight:700;padding:4px 6px;border-radius:4px;text-align:center">lanza</div>
+      </div>
+      <button class="btn btn-sm" onclick="downloadPlantilla()" style="width:100%;font-size:11px">⬇️ Descargar plantilla .csv de ejemplo</button>
+    </div>
+    <!-- Upload zone -->
+    <div id="drop-zone" style="border:2px dashed var(--g200);border-radius:var(--r-md);padding:24px 16px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:12px"
+         onclick="document.getElementById('file-input').click()"
+         ondragover="event.preventDefault();this.style.borderColor='var(--navy)'"
+         ondragleave="this.style.borderColor='var(--g200)'"
+         ondrop="handleDrop(event)">
+      <div style="font-size:28px;margin-bottom:7px">📂</div>
+      <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px">Arrastra tu archivo aquí</div>
+      <div style="font-size:12px;color:var(--g400)">o haz clic para seleccionar · .xlsx, .csv, .xls</div>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileSelect(this)">
+    <!-- Preview -->
+    <div id="import-preview" style="display:none;max-height:200px;overflow-y:auto;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--g600);margin-bottom:6px" id="import-count"></div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px" id="preview-table"></table>
+    </div>
+    <div style="font-size:11px;color:var(--g400)" id="import-status"></div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="closeModal('modal-import')">Cancelar</button>
+      <button class="btn btn-navy btn-sm" id="import-btn" onclick="confirmImport()" style="display:none">✅ Importar jugadoras</button>
     </div>
   </div>
 </div>
@@ -662,14 +761,14 @@ body.is-offline .main{margin-top:32px}
       <div>
         <div style="font-size:10px;font-weight:600;color:var(--g600);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">Resultado del turno</div>
         <div class="rg">
-          <button class="rb hit" onclick="regPlay('1B')">1B</button>
-          <button class="rb xbh" onclick="regPlay('2B')">2B</button>
-          <button class="rb xbh" onclick="regPlay('3B')">3B</button>
-          <button class="rb xbh" onclick="regPlay('HR')">HR⭐</button>
-          <button class="rb out" onclick="regPlay('K')">K</button>
-          <button class="rb out" onclick="regPlay('GO')">GO</button>
-          <button class="rb out" onclick="regPlay('FO')">FO</button>
-          <button class="rb out" onclick="regPlay('LO')">LO</button>
+          <button class="rb hit" onclick="openDetalle('1B')">1B</button>
+          <button class="rb xbh" onclick="openDetalle('2B')">2B</button>
+          <button class="rb xbh" onclick="openDetalle('3B')">3B</button>
+          <button class="rb xbh" onclick="openDetalle('HR')">HR⭐</button>
+          <button class="rb out" onclick="openDetalle('K')">K</button>
+          <button class="rb out" onclick="openDetalle('GO')">GO</button>
+          <button class="rb out" onclick="openDetalle('FO')">FO</button>
+          <button class="rb out" onclick="openDetalle('LO')">LO</button>
           <button class="rb bb" onclick="regPlay('BB')">BB</button>
           <button class="rb bb" onclick="regPlay('HBP')">HBP</button>
           <button class="rb" onclick="regPlay('FC')">FC</button>
@@ -694,6 +793,7 @@ body.is-offline .main{margin-top:32px}
       <select class="sel" id="ros-equipo" onchange="onRosEquipoChange()"><option>— sin equipos —</option></select>
       <select class="sel" id="ros-cat" onchange="onRosEquipoChange()"></select>
       <div class="sp"></div>
+      <button class="btn btn-sm" onclick="openImportModal()">📥 Importar Excel</button>
       <button class="btn btn-navy btn-sm" onclick="openModal('modal-jugadora')">+ Agregar</button>
     </div>
     <div class="pg" id="roster-grid">
@@ -901,6 +1001,182 @@ function initTheme(){
   }catch(e){ setTheme('light'); }
 }
 
+
+// ════ DETALLE DE JUGADA ════
+let _detallePlay=null,_detalleZona=null,_detalleTipo=null,_detalleJugDef=null,_detalleRbi=0;
+
+const DETALLE_CFG={
+  '1B':{cat:'hit',label:'Sencillo (1B)'},
+  '2B':{cat:'hit',label:'Doble (2B)'},
+  '3B':{cat:'hit',label:'Triple (3B)'},
+  'HR':{cat:'hit',label:'Jonrón (HR)',skipZona:true},
+  'K' :{cat:'k',  label:'Ponche (K)',skipZona:true,skipDef:true},
+  'GO':{cat:'out',label:'Rodado (GO)'},
+  'FO':{cat:'fly',label:'Elevado / Flay (FO)'},
+  'LO':{cat:'line',label:'Línea (LO)'},
+};
+const ZONAS=[
+  {key:'LF',label:'LF\nIzquierda'},{key:'CF',label:'CF\nCentro'},{key:'RF',label:'RF\nDerecha'},
+  {key:'1B',label:'1B\nPrimera'},{key:'2B',label:'2B\nSegunda'},{key:'3B',label:'3B\nTercera'},
+  {key:'SS',label:'SS\nShortstop'},{key:'P',label:'P\nPitcher'},{key:'CI',label:'CI\nInfield'},
+];
+const TIPOS_CONT={
+  hit:[{key:'liner',label:'Línea 📏'},{key:'ground',label:'Rodado ⬇️'},{key:'fly',label:'Elevado 🏌️'},{key:'bloop',label:'Bloop/Texas 🌵'},{key:'pull',label:'Pull (jalado)'},{key:'oppo',label:'Oppo (jalonado)'}],
+  fly:[{key:'popup',label:'Pop-up 🔺'},{key:'flay',label:'Flay normal'},{key:'sacfly',label:'Sac Fly ✈️'}],
+  line:[{key:'liner',label:'Línea directa'},{key:'ldp',label:'Línea DP ⚡'}],
+  out:[{key:'ground',label:'Rodado normal'},{key:'gdp',label:'Doble play ⚡'},{key:'bunt',label:'Bunt'}],
+  k:[{key:'sw',label:'Strike swingado'},{key:'called',label:'Strike cantado 🤚'},{key:'foul3',label:'Foul 3er strike'}],
+};
+const JUG_DEF={
+  GO:[{k:'1-3',l:'1-3'},{k:'3-1',l:'3-1'},{k:'4-3',l:'4-3'},{k:'5-3',l:'5-3'},{k:'6-3',l:'6-3'},{k:'5-6-3',l:'5-6-3'},{k:'4-6-3',l:'4-6-3 DP'},{k:'6-4-3',l:'6-4-3 DP'},{k:'U3',l:'U-3'},{k:'U6',l:'U-6'},{k:'1-2-3',l:'1-2-3'}],
+  FO:[{k:'F7',l:'F7 LF'},{k:'F8',l:'F8 CF'},{k:'F9',l:'F9 RF'},{k:'P2',l:'P-2 C'},{k:'P3',l:'P-3 1B'},{k:'P4',l:'P-4 2B'},{k:'P5',l:'P-5 3B'},{k:'P6',l:'P-6 SS'},{k:'SF7',l:'SF-7'},{k:'SF8',l:'SF-8'},{k:'SF9',l:'SF-9'}],
+  LO:[{k:'L3',l:'L3'},{k:'L4',l:'L4'},{k:'L5',l:'L5'},{k:'L6',l:'L6'},{k:'L7',l:'L7'},{k:'L8',l:'L8'},{k:'L9',l:'L9'},{k:'LD',l:'Línea DP'}],
+};
+
+function openDetalle(tipo){
+  const cfg=DETALLE_CFG[tipo]; if(!cfg){ regPlay(tipo); return; }
+  _detallePlay=tipo; _detalleZona=null; _detalleTipo=null; _detalleJugDef=null; _detalleRbi=0;
+  document.getElementById('det-title').textContent=cfg.label;
+  document.getElementById('det-subtitle').textContent='Turno '+lTurno+' · Inn '+lInning+(lMitad==='alta'?' ▲ Alta':' ▼ Baja')+' · '+lOuts+' outs';
+  document.getElementById('det-rbi-val').textContent=0;
+  const zonaS=document.getElementById('det-zona-section');
+  const zonaG=document.getElementById('det-zona-grid');
+  if(cfg.skipZona||cfg.cat==='out'||cfg.cat==='fly'||cfg.cat==='line'||cfg.cat==='k'){
+    zonaS.style.display='none';
+  } else {
+    zonaS.style.display='block';
+    zonaG.innerHTML=ZONAS.map(z=>`<button class="det-btn" onclick="selZona('${z.key}',this)" style="white-space:pre-line;font-size:10px;line-height:1.2">${z.label}</button>`).join('');
+  }
+  const tipoS=document.getElementById('det-tipo-section');
+  const tipoG=document.getElementById('det-tipo-grid');
+  const tipos=TIPOS_CONT[cfg.cat]||[];
+  if(tipos.length){ tipoS.style.display='block'; tipoG.innerHTML=tipos.map(t=>`<button class="det-btn" onclick="selTipo('${t.key}',this)">${t.label}</button>`).join(''); }
+  else tipoS.style.display='none';
+  const defS=document.getElementById('det-def-section');
+  const defG=document.getElementById('det-def-grid');
+  const defs=JUG_DEF[tipo]||[];
+  if(cfg.skipDef||!defs.length){ defS.style.display='none'; }
+  else { defS.style.display='block'; defG.innerHTML=defs.map(d=>`<button class="det-btn" onclick="selDef('${d.k}',this)" style="font-size:10px">${d.l}</button>`).join(''); }
+  document.getElementById('det-rbi-section').style.display=(cfg.cat==='hit')?'block':'none';
+  openModal('modal-detalle');
+}
+function selZona(k,btn){ _detalleZona=k; document.querySelectorAll('#det-zona-grid .det-btn').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel'); }
+function selTipo(k,btn){ _detalleTipo=k; document.querySelectorAll('#det-tipo-grid .det-btn').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel'); }
+function selDef(k,btn){ _detalleJugDef=k; document.querySelectorAll('#det-def-grid .det-btn').forEach(b=>b.classList.remove('sel','sel-red')); btn.classList.add('sel-red'); document.getElementById('det-custom-input').value=''; }
+function adjRbi(d){ _detalleRbi=Math.max(0,(_detalleRbi||0)+d); document.getElementById('det-rbi-val').textContent=_detalleRbi; }
+function confirmDetalle(){
+  const ci=document.getElementById('det-custom-input');
+  if(ci&&ci.value.trim()) _detalleJugDef=ci.value.trim();
+  closeModal('modal-detalle');
+  const lblMap={liner:'línea',ground:'rodado',fly:'elevado',bloop:'bloop',popup:'pop-up',sacfly:'sac fly',gdp:'doble play',ldp:'línea DP',sw:'strike swing',called:'cantado',foul3:'foul 3er',bunt:'bunt',pull:'pull',oppo:'oppo',flare:'texas',flay:'flay'};
+  const parts=[];
+  if(_detalleJugDef) parts.push(_detalleJugDef);
+  else if(_detalleZona) parts.push(_detalleZona);
+  if(_detalleTipo) parts.push(lblMap[_detalleTipo]||_detalleTipo);
+  const desc=parts.join(' · ');
+  regPlay(_detallePlay,{zona:_detalleZona,tipo:_detalleTipo,jugDef:_detalleJugDef,rbi:_detalleRbi,desc});
+}
+function skipDetalle(){ closeModal('modal-detalle'); regPlay(_detallePlay,{rbi:0,desc:''}); }
+
+// ════ IMPORT EXCEL / CSV ════
+let _importRows=[];
+
+function openImportModal(){
+  _importRows=[];
+  document.getElementById('import-preview').style.display='none';
+  document.getElementById('import-btn').style.display='none';
+  document.getElementById('import-status').textContent='';
+  document.getElementById('file-input').value='';
+  const sel=document.getElementById('import-equipo');
+  if(sel) sel.innerHTML=APP.teamsList.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  openModal('modal-import');
+}
+function downloadPlantilla(){
+  const csv='nombre,numero,posicion,batea,lanza\nAna Martínez,7,SS,D,D\nLupita Ramírez,5,3B,D,D\nMaría Salinas,8,CF,I,D\nErika Romo,1,P,D,D\nSofía López,2,C,D,D\nCarmen Hdez,3,1B,D,D\nDaniela Cruz,9,RF,D,D\nFabiola Ramos,10,LF,I,I\nGabriela Mora,11,DH,D,D\nHilda Vega,12,P,D,D\nIsabel Ruiz,13,2B,D,D\nJuliana Ponce,4,2B,D,D';
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  const a=document.createElement('a'); a.href=url; a.download='plantilla_roster.csv'; a.click(); URL.revokeObjectURL(url);
+}
+function handleDrop(e){
+  e.preventDefault(); document.getElementById('drop-zone').style.borderColor='var(--g200)';
+  if(e.dataTransfer.files[0]) parseFile(e.dataTransfer.files[0]);
+}
+function handleFileSelect(inp){ if(inp.files[0]) parseFile(inp.files[0]); }
+function parseFile(file){
+  const ext=file.name.split('.').pop().toLowerCase();
+  document.getElementById('import-status').textContent='⏳ Leyendo archivo...';
+  if(ext==='csv'){ const r=new FileReader(); r.onload=e=>parseCSV(e.target.result); r.readAsText(file,'UTF-8'); }
+  else if(ext==='xlsx'||ext==='xls'){ const r=new FileReader(); r.onload=e=>parseXLSX(e.target.result); r.readAsArrayBuffer(file); }
+  else document.getElementById('import-status').textContent='❌ Usa .xlsx, .xls o .csv';
+}
+function parseCSV(text){
+  const lines=text.trim().split('\n').map(l=>l.trim()).filter(l=>l);
+  if(!lines.length){ document.getElementById('import-status').textContent='❌ Archivo vacío'; return; }
+  const sep=lines[0].includes(';')?';':',';
+  const hdrs=lines[0].toLowerCase().split(sep).map(h=>h.trim().replace(/"/g,''));
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    const vals=lines[i].split(sep).map(v=>v.trim().replace(/"/g,''));
+    if(!vals[0]) continue;
+    const row={}; hdrs.forEach((h,j)=>{ row[h]=vals[j]||''; }); rows.push(normRow(row));
+  }
+  showPreview(rows);
+}
+function parseXLSX(buf){
+  const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload=()=>{
+    try{
+      const wb=XLSX.read(buf,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      showPreview(XLSX.utils.sheet_to_json(ws,{defval:''}).map(r=>normRow(r)));
+    }catch(e){ document.getElementById('import-status').textContent='❌ Error: '+e.message; }
+  };
+  s.onerror=()=>{ document.getElementById('import-status').textContent='❌ No se pudo cargar lector Excel. Usa CSV.'; };
+  document.head.appendChild(s);
+}
+function normRow(r){
+  const get=(...ks)=>{ for(const k of ks){ const v=r[k.toLowerCase()]||r[k]; if(v!==undefined&&v!=='') return String(v).trim(); } return ''; };
+  const mapDir=s=>s.toUpperCase().replace('IZQUIERDA','I').replace('DERECHA','D').replace('LEFT','I').replace('RIGHT','D').replace('SWITCH','S')[0]||'D';
+  return {
+    nombre:  get('nombre','name','jugadora','atleta','player','jugador'),
+    numero:  get('numero','número','number','jersey','num','#'),
+    posicion:(get('posicion','posición','position','pos')||'POS').toUpperCase(),
+    batea:   ['D','I','S'].includes(mapDir(get('batea','bat','bats','b')))?mapDir(get('batea','bat','bats','b')):'D',
+    lanza:   ['D','I'].includes(mapDir(get('lanza','throws','lanza','l','t')))?mapDir(get('lanza','throws','lanza','l','t')):'D',
+  };
+}
+function showPreview(rows){
+  _importRows=rows.filter(r=>r.nombre);
+  const st=document.getElementById('import-status');
+  const pv=document.getElementById('import-preview');
+  const cn=document.getElementById('import-count');
+  const tb=document.getElementById('preview-table');
+  const bt=document.getElementById('import-btn');
+  if(!_importRows.length){ st.textContent='⚠️ No se encontraron jugadoras. Verifica que haya una columna "nombre".'; pv.style.display='none'; bt.style.display='none'; return; }
+  cn.textContent='✅ '+_importRows.length+' jugadoras encontradas:';
+  tb.innerHTML='<thead><tr><th>#</th><th>Nombre</th><th>Jersey</th><th>Pos</th><th>Batea</th><th>Lanza</th></tr></thead><tbody>'+
+    _importRows.slice(0,20).map((r,i)=>`<tr><td>${i+1}</td><td>${r.nombre}</td><td>${r.numero||'—'}</td><td>${r.posicion}</td><td>${r.batea}</td><td>${r.lanza}</td></tr>`).join('')+
+    (_importRows.length>20?`<tr><td colspan="6" style="text-align:center;color:var(--g400)">... y ${_importRows.length-20} más</td></tr>`:'')+
+    '</tbody>';
+  pv.style.display='block'; bt.style.display='inline-flex'; st.textContent='';
+}
+async function confirmImport(){
+  if(!_importRows.length) return;
+  const eqSel=document.getElementById('import-equipo');
+  const eqId=eqSel?eqSel.value:(APP.teamsList[0]?.id||'');
+  const eqName=APP.teamsList.find(t=>t.id===eqId)?.name||'';
+  closeModal('modal-import');
+  showLoading('Importando '+_importRows.length+' jugadoras...');
+  let ok=0,fail=0;
+  for(const row of _importRows){
+    const res=await queueOrPost({action:'addJugadora',nombre:row.nombre,numero:row.numero||'0',posicion:row.posicion,batea:row.batea,lanza:row.lanza,equipo_id:eqId});
+    if(res&&!res.error) ok++; else fail++;
+  }
+  hideLoading();
+  toast(fail===0?('✅ '+ok+' jugadoras importadas para '+eqName):('⚠️ '+ok+' OK · '+fail+' error'));
+  if(eqId) await loadRoster(eqId);
+}
+
 // ══ OFFLINE / INDEXEDDB ══
 let DB = null;
 let isOnline = navigator.onLine;
@@ -1023,37 +1299,56 @@ async function addPitch(type){
   updCount();
 }
 
-async function regPlay(r){
+async function regPlay(r, detalle={}){
   // Update outs
   if(['K','GO','FO','LO'].includes(r)){
     lOuts++;
     if(lOuts>=3){ lOuts=0; if(lMitad==='alta') lMitad='baja'; else{ lMitad='alta'; lInning++; } }
   }
-  // Update score for HR
-  if(r==='HR') lLocalScore++;
+  // Update score for HR or RBI
+  const rbi = detalle.rbi || (r==='HR'?1:0);
+  if(rbi > 0) lLocalScore += rbi;
+  if(r==='HR') lLocalScore = Math.max(lLocalScore, lLocalScore); // ensure at least 1
+
+  // Build display label
+  const descExtra = detalle.desc ? ` · ${detalle.desc}` : '';
+  const offIcon   = isOnline?'':'📵';
+  const rbiTxt    = rbi > 0 ? ` · ${rbi} RBI` : '';
 
   // Add to log
   const log = document.getElementById('play-log');
   const li  = document.createElement('li');
   li.className='pe';
-  const offIcon = isOnline?'':'📵';
-  li.innerHTML=`<span class="pi">Inn ${lInning} ${lMitad==='alta'?'▲':'▼'}</span><span class="ab ${rcls[r]||''}" style="margin-right:7px">${r}</span><span class="pr2">Turno ${lTurno} — ${rdesc[r]||r} ${offIcon}</span><span class="pp2">${lPitches} lanz.</span>`;
+  li.innerHTML=`<span class="pi">Inn ${lInning} ${lMitad==='alta'?'▲':'▼'}</span>`+
+    `<span class="ab ${rcls[r]||''}" style="margin-right:7px">${r}</span>`+
+    `<span class="pr2" style="min-width:0;overflow:hidden">Turno ${lTurno} — ${rdesc[r]||r}${descExtra}${rbiTxt} ${offIcon}</span>`+
+    `<span class="pp2">${lPitches} lanz.</span>`;
   if(log.querySelector('li[style]')) log.innerHTML='';
   log.insertBefore(li,log.firstChild);
   lTurno++;
   lBalls=0;lStrikes=0;lFouls=0;lPitches=0;
   updCount(); updLiveUI();
 
-  // Save offline-first
+  // Save offline-first with full detail
   await queueOrPost({
-    action:'addJugada',
-    juego_id: window._juegoId||'JUEGO_LOCAL',
-    inning:lInning, mitad:lMitad,
-    tipo:r, bolas:lBalls, strikes:lStrikes,
-    fouls:lFouls, lanzamientos:lPitches,
-    rbi:0, anotaron:r==='HR'?1:0, outs_antes:lOuts,
+    action:       'addJugada',
+    juego_id:     window._juegoId||'JUEGO_LOCAL',
+    inning:       lInning,
+    mitad:        lMitad,
+    tipo:         r,
+    zona:         detalle.zona   || '',
+    tipo_contacto:detalle.tipo   || '',
+    jug_def:      detalle.jugDef || '',
+    descripcion:  detalle.desc   || '',
+    bolas:        lBalls,
+    strikes:      lStrikes,
+    fouls:        lFouls,
+    lanzamientos: lPitches,
+    rbi:          rbi,
+    anotaron:     rbi,
+    outs_antes:   lOuts,
   });
-  toast((isOnline?'✅':'📵')+ ' '+(rdesc[r]||r)+' registrado');
+  toast((isOnline?'✅':'📵')+' '+(rdesc[r]||r)+(descExtra||'')+' registrado');
 }
 
 function undoLastPlay(){ toast('↩ Deshacer — próximamente'); }
