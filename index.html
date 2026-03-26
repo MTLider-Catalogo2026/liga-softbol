@@ -604,10 +604,10 @@ img{display:block}
       ⚠️ <span id="api-banner-text">Modo demo — Conecta Apps Script para datos reales. Ve a ⚙️ Configuración → Pegar URL del backend.</span>
     </div>
     <div class="mg">
-      <div class="mc navy"><div class="mc-lbl">Equipos</div><div class="mc-val" id="m-teams">28</div><div class="mc-sub" id="m-cats">3 categorías</div></div>
-      <div class="mc red"><div class="mc-lbl">Juegos jugados</div><div class="mc-val">47</div><div class="mc-sub">De 126 programados</div></div>
-      <div class="mc gold"><div class="mc-lbl">Jornada</div><div class="mc-val">6/27</div><div class="mc-sub" id="m-next">Próx: 22 Mar 2025</div></div>
-      <div class="mc green"><div class="mc-lbl">Líder AVG</div><div class="mc-val">.412</div><div class="mc-sub">A. Martínez · Panteras</div></div>
+      <div class="mc navy"><div class="mc-lbl">Equipos</div><div class="mc-val" id="m-teams">0</div><div class="mc-sub" id="m-cats">cargando...</div></div>
+      <div class="mc red"><div class="mc-lbl">Juegos jugados</div><div class="mc-val" id="m-juegos">0</div><div class="mc-sub">juegos registrados</div></div>
+      <div class="mc gold"><div class="mc-lbl">Jornada</div><div class="mc-val" id="m-jornada">1</div><div class="mc-sub" id="m-next">Jornada actual</div></div>
+      <div class="mc green"><div class="mc-lbl">Líder AVG</div><div class="mc-val" id="m-avg">—</div><div class="mc-sub" id="m-avg-sub">Líder AVG</div></div>
     </div>
     <div class="card">
       <div class="cat-tabs" id="cat-tabs"></div>
@@ -632,45 +632,26 @@ img{display:block}
       <button class="btn btn-navy btn-sm" onclick="toast('🎲 Generando Round Robin para 28 equipos...')">🎲 Generar calendario</button>
     </div>
     <div class="card" style="padding:15px 17px">
-      <div class="j-hdr">🔴 En vivo — Hoy</div>
-      <div class="gr" onclick="go('live',null)">
-        <div class="gd"><div class="gd-d">Hoy</div><div class="gd-t">10:00am</div></div>
-        <div class="gt">Las Panteras <span class="vs">vs</span> Diablas Rojas</div>
-        <div class="gs" style="color:var(--red)">4 — 2</div>
-        <div class="gm"><span class="badge blv">● 3er Inn</span><span class="gv">Cancha 1</span></div>
-      </div>
-      <div class="j-hdr">Jornada 5 — 15 Mar 2025</div>
-      <div class="gr" onclick="go('boxscore',null)">
-        <div class="gd"><div class="gd-d">15 Mar</div><div class="gd-t">10:00am</div></div>
-        <div class="gt">Texas GDL <span class="vs">vs</span> Legion Zapopan</div>
-        <div class="gs">5 — 3</div>
-        <div class="gm"><span class="badge bf">Final</span><span class="gv">Cancha 1</span></div>
-      </div>
-      <div class="gr">
-        <div class="gd"><div class="gd-d">15 Mar</div><div class="gd-t">12:00pm</div></div>
-        <div class="gt">Las Tigras <span class="vs">vs</span> Águilas Azules</div>
-        <div class="gs">7 — 4</div>
-        <div class="gm"><span class="badge bf">Final</span><span class="gv">Cancha 2</span></div>
-      </div>
-      <div class="j-hdr">Jornada 6 — 22 Mar 2025</div>
-      <div class="gr">
-        <div class="gd"><div class="gd-d">22 Mar</div><div class="gd-t">12:00pm</div></div>
-        <div class="gt">Legion Zapopan <span class="vs">vs</span> Las Tigras</div>
-        <div class="gs" style="color:var(--g200);font-size:16px">vs</div>
-        <div class="gm"><span class="badge bn">Próximo</span><span class="gv">Cancha 1</span></div>
-      </div>
-      <div class="gr">
-        <div class="gd"><div class="gd-d">22 Mar</div><div class="gd-t">2:00pm</div></div>
-        <div class="gt">Texas GDL <span class="vs">vs</span> Guerreras</div>
-        <div class="gs" style="color:var(--g200);font-size:16px">vs</div>
-        <div class="gm"><span class="badge bn">Próximo</span><span class="gv">Cancha 2</span></div>
+      <div id="calendar-body">
+        <div style="text-align:center;padding:40px 20px;color:var(--g400)">
+          <div style="font-size:36px;margin-bottom:10px">📅</div>
+          <div style="font-size:15px;font-weight:600;color:var(--g600);margin-bottom:6px">Sin juegos programados</div>
+          <div style="font-size:12px">Agrega equipos y crea juegos desde el botón 🎲 Generar calendario</div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- ══════ LÍDERES ══════ -->
   <div class="page" id="pg-leaders">
-    <div class="ldg">
+    <div id="leaders-body">
+        <div style="text-align:center;padding:40px 20px;color:var(--g400);grid-column:1/-1">
+          <div style="font-size:36px;margin-bottom:10px">📊</div>
+          <div style="font-size:15px;font-weight:600;color:var(--g600);margin-bottom:6px">Sin estadísticas aún</div>
+          <div style="font-size:12px">Los líderes aparecen automáticamente cuando se anotan jugadas en vivo</div>
+        </div>
+      </div>
+      <div class="ldg" style="display:none">
       <div class="card">
         <div class="ch"><div class="ct">🥇 Promedio de Bateo</div></div>
         <div style="padding:4px 16px 13px">
@@ -713,6 +694,8 @@ img{display:block}
       </div>
     </div>
   </div>
+
+  </div><!-- end hidden ldg -->
 
   <!-- ══════ BOX SCORE ══════ -->
   <div class="page" id="pg-boxscore">
@@ -851,9 +834,9 @@ img{display:block}
     <div class="card mt4">
       <div class="ch"><div class="ct">Historial de jugadas</div></div>
       <ul class="pl" id="play-log">
-        <li class="pe"><span class="pi">Inn 3 ▼</span><span class="ab ao" style="margin-right:8px">GO</span><span class="pr2">C. Hdez — G6-3 · 2 outs</span><span class="pp2">3 lanz.</span></li>
-        <li class="pe"><span class="pi">Inn 3 ▼</span><span class="ab abb" style="margin-right:8px">BB</span><span class="pr2">M. Salinas — Base por bolas · 2da base</span><span class="pp2">6 lanz.</span></li>
-        <li class="pe"><span class="pi">Inn 2 ▲</span><span class="ab ax" style="margin-right:8px">HR</span><span class="pr2">A. Martínez — JONRÓN · 2 carreras</span><span class="pp2">5 lanz.</span></li>
+        <li style="text-align:center;padding:20px;color:var(--g400);font-size:13px">
+          Las jugadas aparecen aquí al anotarlas
+        </li>
       </ul>
     </div>
   </div>
@@ -867,12 +850,9 @@ img{display:block}
       <button class="btn btn-navy btn-sm" onclick="openModal('modal-jugadora')">+ Agregar jugadora</button>
     </div>
     <div class="pg">
-      <div class="plc"><div class="pav" style="background:#D6E4FF;color:#1A2B8B">AM</div><div class="pnum">#7</div><div class="pname">Ana Martínez</div><div class="ppos">SS · Batea D · Lanza D</div><div class="pst"><div class="psi"><div class="psv" style="color:var(--red)">.412</div><div class="psl">AVG</div></div><div class="psi"><div class="psv">4</div><div class="psl">HR</div></div><div class="psi"><div class="psv">14</div><div class="psl">RBI</div></div></div></div>
-      <div class="plc"><div class="pav" style="background:#FDDEDE;color:#7A1A1A">LR</div><div class="pnum">#5</div><div class="pname">Lupita Ramírez</div><div class="ppos">3B · Batea D · Lanza D</div><div class="pst"><div class="psi"><div class="psv">.385</div><div class="psl">AVG</div></div><div class="psi"><div class="psv">3</div><div class="psl">HR</div></div><div class="psi"><div class="psv">9</div><div class="psl">RBI</div></div></div></div>
-      <div class="plc"><div class="pav" style="background:#D4EDDA;color:#155724">MS</div><div class="pnum">#8</div><div class="pname">María Salinas</div><div class="ppos">CF · Batea I · Lanza D</div><div class="pst"><div class="psi"><div class="psv">.372</div><div class="psl">AVG</div></div><div class="psi"><div class="psv">2</div><div class="psl">HR</div></div><div class="psi"><div class="psv">7</div><div class="psl">RBI</div></div></div></div>
-      <div class="plc"><div class="pav" style="background:#FFF3CD;color:#856404">PT</div><div class="pnum">#4</div><div class="pname">Paola Torres</div><div class="ppos">2B · Batea D · Lanza D</div><div class="pst"><div class="psi"><div class="psv">.354</div><div class="psl">AVG</div></div><div class="psi"><div class="psv">1</div><div class="psl">HR</div></div><div class="psi"><div class="psv">11</div><div class="psl">RBI</div></div></div></div>
-      <div class="plc"><div class="pav" style="background:#E8E4F0;color:#4A3080">ER</div><div class="pnum">#1</div><div class="pname">Erika Romo</div><div class="ppos">P · Batea D · Lanza D</div><div class="pst"><div class="psi"><div class="psv" style="color:var(--red)">1.24</div><div class="psl">ERA</div></div><div class="psi"><div class="psv">28</div><div class="psl">K</div></div><div class="psi"><div class="psv">3-0</div><div class="psl">W-L</div></div></div></div>
-      <div class="plc plc-add" onclick="openModal('modal-jugadora')"><div style="font-size:28px;margin-bottom:6px">+</div><div style="font-size:12px;font-weight:500">Agregar jugadora</div></div>
+      <div id="roster-grid-body" style="display:contents">
+        <div class="plc plc-add" onclick="openModal('modal-jugadora')"><div style="font-size:28px;margin-bottom:6px">+</div><div style="font-size:12px;font-weight:500">Agregar jugadora</div></div>
+      </div>
     </div>
   </div>
 
@@ -912,10 +892,11 @@ img{display:block}
       <button class="btn btn-navy btn-sm" onclick="openModal('modal-decreto')">+ Nuevo decreto</button>
     </div>
     <div class="dl" id="decreto-list">
-      <div class="dc alta"><div class="di">📥</div><div class="db"><div class="dtype">Alta de jugadora</div><div class="dtit">Decreto #018 — Alta: María González · Las Panteras</div><div class="ddesc">Registro aprobado. Categoría Mayor. Jersey #12. Posición: Pitcher.</div></div><div class="dm"><div class="ddate">22 Mar 2025</div><div class="deq">✅ Aprobado</div></div></div>
-      <div class="dc baja"><div class="di">📤</div><div class="db"><div class="dtype">Baja definitiva</div><div class="dtit">Decreto #017 — Baja: Rosa Pérez · Diablas Rojas</div><div class="ddesc">Solicitud de baja voluntaria. Efectiva a partir del 20 Mar 2025.</div></div><div class="dm"><div class="ddate">20 Mar 2025</div><div class="deq">✅ Procesado</div></div></div>
-      <div class="dc sanc"><div class="di">⚠️</div><div class="db"><div class="dtype">Sanción</div><div class="dtit">Decreto #016 — Sanción: Legion Zapopan</div><div class="ddesc">Por no presentar equipo completo en jornada 4. Penalización: 1 juego perdido.</div></div><div class="dm"><div class="ddate">15 Mar 2025</div><div class="deq" style="color:var(--gold)">⚠️ Vigente</div></div></div>
-      <div class="dc tras"><div class="di">🔄</div><div class="db"><div class="dtype">Traspaso</div><div class="dtit">Decreto #015 — Traspaso: C. Hdez · Tigras → Águilas</div><div class="ddesc">Traspaso autorizado. Categoría Master. Efectivo desde jornada 6.</div></div><div class="dm"><div class="ddate">10 Mar 2025</div><div class="deq">✅ Aprobado</div></div></div>
+      <div style="text-align:center;padding:40px 20px;color:var(--g400)">
+        <div style="font-size:36px;margin-bottom:10px">📜</div>
+        <div style="font-size:15px;font-weight:600;color:var(--g600);margin-bottom:6px">Sin decretos publicados</div>
+        <div style="font-size:12px">Los decretos aparecerán aquí al publicarlos con el botón + Nuevo decreto</div>
+      </div>
     </div>
   </div>
 
@@ -1062,44 +1043,10 @@ const APP = {
   ],
   dias: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
   diasActivos: [false,false,false,false,false,true,true],
-  teamsList: [
-    { name:'Las Panteras',   cat:'Mayor',  color:'#1A2B8B' },
-    { name:'Texas GDL',      cat:'Mayor',  color:'#CC1F2D' },
-    { name:'Diablas Rojas',  cat:'Mayor',  color:'#28a745' },
-    { name:'Legion Zapopan', cat:'Mayor',  color:'#f0a500' },
-    { name:'Las Tigras',     cat:'Mayor',  color:'#6644bb' },
-    { name:'Guerreras',      cat:'Mayor',  color:'#888888' },
-    { name:'Águilas Azules', cat:'Libre',  color:'#0066CC' },
-    { name:'Estrellas',      cat:'Libre',  color:'#CC1F2D' },
-    { name:'Las Bravas',     cat:'Libre',  color:'#28a745' },
-    { name:'Volcanes',       cat:'Libre',  color:'#f0a500' },
-    { name:'Las Veteranas',  cat:'Master', color:'#994499' },
-    { name:'Campeonas',      cat:'Master', color:'#CC1F2D' },
-    { name:'Fieras',         cat:'Master', color:'#1A2B8B' },
-  ]
+  teamsList: [] // Se carga desde Google Sheets
 };
 
-const standingsData = {
-  Mayor: [
-    {pos:1,name:'Las Panteras',  color:'#1A2B8B',j:6,g:5,p:1,pct:'.833',gb:'—',  rf:42,rc:22,r:'G4'},
-    {pos:2,name:'Texas GDL',     color:'#CC1F2D',j:6,g:4,p:2,pct:'.667',gb:'1.0',rf:35,rc:28,r:'G2'},
-    {pos:3,name:'Diablas Rojas', color:'#28a745',j:5,g:3,p:2,pct:'.600',gb:'1.5',rf:29,rc:25,r:'P1'},
-    {pos:4,name:'Legion Zapopan',color:'#f0a500',j:5,g:2,p:3,pct:'.400',gb:'2.5',rf:20,rc:28,r:'P2'},
-    {pos:5,name:'Las Tigras',    color:'#6644bb',j:5,g:1,p:4,pct:'.200',gb:'3.5',rf:15,rc:31,r:'P3'},
-    {pos:6,name:'Guerreras',     color:'#888888',j:5,g:0,p:5,pct:'.000',gb:'4.5',rf:10,rc:17,r:'P5'},
-  ],
-  Libre: [
-    {pos:1,name:'Águilas Azules',color:'#0066CC',j:5,g:4,p:1,pct:'.800',gb:'—',  rf:38,rc:20,r:'G3'},
-    {pos:2,name:'Estrellas',     color:'#CC1F2D',j:5,g:3,p:2,pct:'.600',gb:'1.0',rf:31,rc:24,r:'G1'},
-    {pos:3,name:'Las Bravas',    color:'#28a745',j:5,g:2,p:3,pct:'.400',gb:'2.0',rf:22,rc:26,r:'P2'},
-    {pos:4,name:'Volcanes',      color:'#f0a500',j:5,g:1,p:4,pct:'.200',gb:'3.0',rf:17,rc:32,r:'P3'},
-  ],
-  Master: [
-    {pos:1,name:'Las Veteranas', color:'#994499',j:4,g:3,p:1,pct:'.750',gb:'—',  rf:28,rc:18,r:'G2'},
-    {pos:2,name:'Campeonas',     color:'#CC1F2D',j:4,g:2,p:2,pct:'.500',gb:'1.0',rf:22,rc:22,r:'G1'},
-    {pos:3,name:'Fieras',        color:'#1A2B8B',j:4,g:1,p:3,pct:'.250',gb:'2.0',rf:15,rc:25,r:'P2'},
-  ]
-};
+const standingsData = {}; // Se carga desde Google Sheets
 
 // ═══════════════ INIT ═══════════════
 let currentCat = 0;
@@ -1186,6 +1133,33 @@ async function loadFromAPI() {
     }
 
     updateLeague();
+
+    // Cargar conteo de juegos
+    const jRes = await apiGet('getJuegos');
+    if (jRes && jRes.juegos) {
+      const total = jRes.juegos.length;
+      const el = document.getElementById('m-juegos');
+      if (el) el.textContent = total;
+    }
+
+    // Cargar standings reales
+    if (APP.cats.length > 0) {
+      const sRes = await apiGet('getStandings', { categoria: APP.cats[0].name });
+      if (sRes && sRes.standings && sRes.standings.length > 0) {
+        standingsData[APP.cats[0].name] = sRes.standings.map((s, i) => ({
+          pos: i+1, name: s.nombre, color: s.color || '#1A2B8B',
+          j: s.j, g: s.g, p: s.p, pct: s.pct, gb: s.gb || '—',
+          rf: s.rf, rc: s.rc,
+          r: s.g > s.p ? 'G' + s.g : 'P' + s.p
+        }));
+        renderStandings();
+      }
+    }
+
+    // Cargar roster si hay equipos
+    if (APP.teamsList.length > 0) {
+      await loadRoster(APP.teamsList[0].id);
+    }
   } catch(err) {
     console.error('Error loading from API:', err);
     toast('⚠️ No se pudo conectar al servidor. Modo demo activo.');
@@ -1214,8 +1188,17 @@ function switchCat(i, btn) {
 }
 
 function renderStandings() {
-  const catName = APP.cats[currentCat].name;
+  const catName = APP.cats[currentCat] ? APP.cats[currentCat].name : '';
   const data = standingsData[catName] || [];
+  if (data.length === 0) {
+    document.getElementById('st-body').innerHTML = `
+      <tr><td colspan="10" style="text-align:center;padding:32px;color:var(--g400)">
+        <div style="font-size:28px;margin-bottom:8px">🏆</div>
+        <div style="font-weight:600;margin-bottom:4px">Sin juegos registrados aún</div>
+        <div style="font-size:12px">Los standings aparecen automáticamente cuando se finalicen juegos</div>
+      </td></tr>`;
+    return;
+  }
   document.getElementById('st-body').innerHTML = data.map(t => `
     <tr>
       <td><span class="pos-n ${t.pos===1?'t1':t.pos<=3?'t3':''}">${t.pos}</span></td>
@@ -1538,6 +1521,50 @@ function toast(msg) {
   tTimer=setTimeout(()=>t.classList.remove('show'),2800);
 }
 
+
+// ═══════════════ ROSTER LOADER ═══════════════
+async function loadRoster(equipo_id) {
+  if (!apiConnected() || !equipo_id) return;
+  const res = await apiGet('getJugadoras', { equipo_id });
+  if (!res || !res.jugadoras) return;
+  const grid = document.getElementById('roster-grid-body');
+  if (!grid) return;
+  const colors = ['#D6E4FF','#FDDEDE','#D4EDDA','#FFF3CD','#E8E4F0','#F3E8FF'];
+  const fgColors = ['#1A2B8B','#7A1A1A','#155724','#856404','#4A3080','#6B21A8'];
+  grid.innerHTML = res.jugadoras.map((j, i) => {
+    const initials = j.nombre.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || 'J' + j.numero;
+    const ci = i % colors.length;
+    return `<div class="plc" onclick="editJugadora('${j.id}')">
+      <div class="pav" style="background:${colors[ci]};color:${fgColors[ci]}">${initials}</div>
+      <div class="pnum">#${j.numero}</div>
+      <div class="pname">${j.nombre}</div>
+      <div class="ppos">${j.posicion} · Batea ${j.batea} · Lanza ${j.lanza}</div>
+      <div class="pst">
+        <div class="psi"><div class="psv">—</div><div class="psl">AVG</div></div>
+        <div class="psi"><div class="psv">—</div><div class="psl">HR</div></div>
+        <div class="psi"><div class="psv">—</div><div class="psl">RBI</div></div>
+      </div>
+    </div>`;
+  }).join('') + `<div class="plc plc-add" onclick="openModal('modal-jugadora')">
+    <div style="font-size:28px;margin-bottom:6px">+</div>
+    <div style="font-size:12px;font-weight:500">Agregar jugadora</div>
+  </div>`;
+}
+
+function editJugadora(id) {
+  toast('✏️ Edición de jugadora próximamente');
+}
+
+// Reload roster when team selector changes
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('ros-equipo');
+  if (sel) {
+    sel.addEventListener('change', () => {
+      const eq = APP.teamsList.find(t => t.name === sel.value);
+      if (eq) loadRoster(eq.id);
+    });
+  }
+});
 
 // ═══════════════ API URL SETUP ═══════════════
 function setApiUrl() {
