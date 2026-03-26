@@ -6,6 +6,11 @@
 <meta name="theme-color" content="#1A2B8B">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Liga Softbol">
+<link rel="manifest" href="manifest.json">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="description" content="Liga Softbol Femenil de Zapopan — Sistema Digital de Estadísticas">
 <title>Liga Softbol Femenil de Zapopan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -553,6 +558,52 @@ img{display:block}
   transition: all .2s;
 }
 .theme-toggle:hover { transform: scale(1.1); }
+
+/* ═══════════════ OFFLINE MODE ═══════════════ */
+.offline-bar {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+  background: var(--gold);
+  color: #5a3a00;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 16px;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.offline-bar.show { display: flex; }
+.offline-bar .sync-btn {
+  background: rgba(0,0,0,.15);
+  border: 1px solid rgba(0,0,0,.2);
+  border-radius: 6px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  color: inherit;
+}
+.offline-bar.syncing { background: #1B8B4A; color: #fff; }
+.offline-bar.synced  { background: #1B8B4A; color: #fff; }
+.sync-counter {
+  display: none;
+  background: var(--red);
+  color: #fff;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  position: absolute;
+  top: 8px;
+  right: 70px;
+}
+.sync-counter.show { display: block; }
+/* Push content down when offline bar visible */
+body.offline-mode .main { margin-top: 34px; }
+[data-theme="dark"] .offline-bar { color: #fff; }
 </style>
 </head>
 <body>
@@ -560,6 +611,11 @@ img{display:block}
 <div class="loading-overlay" id="loading-overlay">
   <div class="spinner"></div>
   <div class="loading-text" id="loading-text">Cargando...</div>
+</div>
+<div class="offline-bar" id="offline-bar">
+  <span id="offline-msg">📵 Sin conexión — Las jugadas se guardan localmente</span>
+  <span id="sync-pending-count" style="background:rgba(0,0,0,.2);border-radius:99px;padding:1px 8px;font-size:11px"></span>
+  <button class="sync-btn" id="sync-btn" onclick="syncPending()" style="display:none">⟳ Sincronizar</button>
 </div>
 <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
 <div class="ov" id="ov" onclick="closeSidebar()"></div>
@@ -1164,9 +1220,11 @@ const standingsData = {}; // Se carga desde Google Sheets
 // ═══════════════ INIT ═══════════════
 let currentCat = 0;
 let lBalls=1,lStrikes=1,lFouls=0,lPitches=4;
+let lInning=1,lMitad="alta",lOuts=0,lTurno=1;
 
 async function init() {
-  autoTheme(); // Apply theme before anything renders
+  autoTheme();
+  await initOffline(); // Setup offline DB and SW // Apply theme before anything renders
   // Mostrar estado de API
   updateApiBanner();
 
@@ -1528,8 +1586,8 @@ function saveJugadora() {
 // ═══════════════ LIVE SCORING ═══════════════
 function addPitch(type) {
   lPitches++;
-  if(type==='b'){lBalls=Math.min(lBalls+1,4);if(lBalls===4){regPlay('BB');return;}}
-  else if(type==='s'){lStrikes=Math.min(lStrikes+1,3);if(lStrikes===3){regPlay('K');return;}}
+  if(type==='b'){lBalls=Math.min(lBalls+1,4);if(lBalls===4){await regPlay('BB');return;}}
+  else if(type==='s'){lStrikes=Math.min(lStrikes+1,3);if(lStrikes===3){await regPlay('K');return;}}
   else if(type==='f'){lFouls++;if(lStrikes<2)lStrikes++;}
   updCount();
 }
@@ -1551,15 +1609,58 @@ const rdesc={
 };
 const rcls={'1B':'ah','2B':'ax','3B':'ax','HR':'ax','BB':'abb','HBP':'abb','K':'ao','GO':'ao','FO':'ao','LO':'ao','FC':'ao','SAC':'as2'};
 
-function regPlay(r) {
+async function regPlay(r) {
   const log=document.getElementById('play-log');
   const li=document.createElement('li');
   li.className='pe';
-  li.innerHTML=`<span class="pi">Inn 3 ▼</span><span class="ab ${rcls[r]||''}" style="margin-right:8px">${r}</span><span class="pr2">A. Martínez — ${rdesc[r]||r}</span><span class="pp2">${lPitches} lanz.</span>`;
-  log.insertBefore(li,log.firstChild);
+
+  // Build jugada data
+  const jugada = {
+    juego_id:        window._juegoActual?.id || 'JUEGO_LOCAL',
+    inning:          lInning,
+    mitad:           lMitad,
+    equipo_id:       window._juegoActual?.local_id || '',
+    jugadora_id:     '',
+    jugadora_nombre: 'Turno ' + (lTurno++),
+    tipo:            r,
+    bolas:           lBalls,
+    strikes:         lStrikes,
+    fouls:           lFouls,
+    lanzamientos:    lPitches,
+    rbi:             0,
+    anotaron:        r === 'HR' ? 1 : 0,
+    outs_antes:      lOuts,
+  };
+
+  // Update outs
+  if (['K','GO','FO','LO'].includes(r)) {
+    lOuts++;
+    if (lOuts >= 3) {
+      lOuts = 0;
+      if (lMitad === 'alta') { lMitad = 'baja'; }
+      else { lMitad = 'alta'; lInning++; }
+      toast('🔄 ' + (lOuts === 0 ? 'Cambio de lado — Inning ' + lInning : ''));
+    }
+  }
+
+  // Save offline-first
+  const offlineIcon = isOnline ? '' : ' 📵';
+  li.innerHTML=`<span class="pi">Inn ${lInning} ${lMitad==='alta'?'▲':'▼'}</span><span class="ab ${rcls[r]||''}" style="margin-right:8px">${r}</span><span class="pr2">${jugada.jugadora_nombre} — ${rdesc[r]||r}${offlineIcon}</span><span class="pp2">${lPitches} lanz.</span>`;
+  log.insertBefore(li, log.firstChild);
+
   lBalls=0;lStrikes=0;lFouls=0;lPitches=0;
   updCount();
-  toast('✅ ' + (rdesc[r]||r) + ' registrado');
+
+  // Update inning display
+  document.querySelector('.lin') && (document.querySelector('.lin').textContent = lInning + '°');
+  document.querySelector('.lil') && (document.querySelector('.lil').textContent =
+    (lMitad==='alta'?'▲ Alta':'▼ Baja') + ' · ' + lOuts + ' outs');
+
+  // Save to IndexedDB + queue API
+  await saveJugadaOfflineFirst(jugada);
+
+  const saved = isOnline ? '✅' : '📵 Guardado local';
+  toast(saved + ' ' + (rdesc[r]||r) + ' registrado');
 }
 
 // ═══════════════ CANCHAS / DÍAS ═══════════════
@@ -1744,6 +1845,323 @@ function setApiUrl() {
     }, 100);
   }
 })();
+
+
+// ═══════════════════════════════════════════════
+// OFFLINE MODE — IndexedDB + Service Worker
+// ═══════════════════════════════════════════════
+
+// ── IndexedDB setup ──
+const DB_NAME    = 'LigaSoftbolDB';
+const DB_VERSION = 1;
+let   db         = null;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      // Store for pending API calls (jugadas, decretos, etc.)
+      if (!d.objectStoreNames.contains('pending')) {
+        const s = d.createObjectStore('pending', { keyPath: 'id', autoIncrement: true });
+        s.createIndex('ts', 'ts', { unique: false });
+      }
+      // Store for local game data cache
+      if (!d.objectStoreNames.contains('cache')) {
+        d.createObjectStore('cache', { keyPath: 'key' });
+      }
+      // Store for jugadas del juego actual (offline scoring)
+      if (!d.objectStoreNames.contains('jugadas_local')) {
+        const js = d.createObjectStore('jugadas_local', { keyPath: 'id', autoIncrement: true });
+        js.createIndex('juego_id', 'juego_id', { unique: false });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+async function dbPut(store, data) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).put(data);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+async function dbGetAll(store, indexName, value) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(store, 'readonly');
+    const os  = tx.objectStore(store);
+    const req = indexName
+      ? os.index(indexName).getAll(value)
+      : os.getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+async function dbDelete(store, id) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+async function dbClear(store) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).clear();
+    req.onsuccess = () => resolve();
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+// ── Online/Offline detection ──
+let isOnline = navigator.onLine;
+
+function updateOnlineStatus() {
+  isOnline = navigator.onLine;
+  const bar = document.getElementById('offline-bar');
+  const msg = document.getElementById('offline-msg');
+  if (!bar) return;
+  if (isOnline) {
+    bar.classList.remove('show');
+    document.body.classList.remove('offline-mode');
+    // Auto-sync when coming back online
+    syncPending();
+  } else {
+    bar.classList.add('show');
+    bar.classList.remove('syncing', 'synced');
+    document.body.classList.add('offline-mode');
+    msg.textContent = '📵 Sin conexión — Las jugadas se guardan localmente';
+    updatePendingCount();
+  }
+}
+
+window.addEventListener('online',  updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+async function updatePendingCount() {
+  if (!db) return;
+  const pending = await dbGetAll('pending');
+  const count   = pending.length;
+  const countEl = document.getElementById('sync-pending-count');
+  const syncBtn = document.getElementById('sync-btn');
+  if (countEl) countEl.textContent = count > 0 ? count + ' pendientes' : '';
+  if (syncBtn)  syncBtn.style.display = count > 0 && isOnline ? 'block' : 'none';
+}
+
+// ── Queue API call for later if offline ──
+async function queueOrPost(body) {
+  if (isOnline && apiConnected()) {
+    try {
+      const res = await apiPost(body);
+      if (res && !res.error) return res;
+      // If server error, queue it
+      throw new Error(res?.error || 'Server error');
+    } catch(e) {
+      console.warn('API failed, queuing:', e.message);
+    }
+  }
+  // Save to pending queue
+  await dbPut('pending', {
+    body,
+    ts: Date.now(),
+    action: body.action,
+  });
+  await updatePendingCount();
+  return { ok: true, offline: true };
+}
+
+// ── Sync all pending calls when online ──
+async function syncPending() {
+  if (!db || !isOnline || !apiConnected()) return;
+  const pending = await dbGetAll('pending');
+  if (pending.length === 0) return;
+
+  const bar = document.getElementById('offline-bar');
+  const msg = document.getElementById('offline-msg');
+  bar.classList.add('show', 'syncing');
+  msg.textContent = '⟳ Sincronizando ' + pending.length + ' jugadas...';
+
+  let synced = 0;
+  let errors  = 0;
+
+  for (const item of pending) {
+    try {
+      const res = await apiPost(item.body);
+      if (res && !res.error) {
+        await dbDelete('pending', item.id);
+        synced++;
+      } else {
+        errors++;
+      }
+    } catch(e) {
+      errors++;
+    }
+  }
+
+  await updatePendingCount();
+
+  if (errors === 0) {
+    bar.classList.remove('syncing');
+    bar.classList.add('synced');
+    msg.textContent = '✅ ' + synced + ' jugadas sincronizadas con Google Sheets';
+    setTimeout(() => {
+      bar.classList.remove('show', 'synced');
+      document.body.classList.remove('offline-mode');
+    }, 3000);
+  } else {
+    bar.classList.remove('syncing');
+    msg.textContent = '⚠️ ' + synced + ' sincronizadas · ' + errors + ' con error · Reintentando...';
+  }
+}
+
+// ── Save jugada locally AND queue for API ──
+async function saveJugadaOfflineFirst(jugadaData) {
+  // 1. Save to local IndexedDB immediately (always works offline)
+  await dbPut('jugadas_local', {
+    ...jugadaData,
+    saved_at: Date.now(),
+    synced: isOnline,
+  });
+
+  // 2. Queue or post to API
+  const res = await queueOrPost({ action: 'addJugada', ...jugadaData });
+
+  // 3. Update marcador local
+  updateMarcadorLocal(jugadaData);
+
+  return res;
+}
+
+// ── Local scoreboard (works fully offline) ──
+const marcadorLocal = {
+  local_carreras: 0, visitante_carreras: 0,
+  local_hits: 0,     visitante_hits: 0,
+  local_errores: 0,  visitante_errores: 0,
+};
+
+function updateMarcadorLocal(jugada) {
+  const esHit = ['1B','2B','3B','HR','FC'].includes(jugada.tipo);
+  const esLocal = jugada.equipo_id === window._juegoActual?.local_id;
+
+  if ((jugada.anotaron || 0) > 0) {
+    if (esLocal) marcadorLocal.local_carreras += jugada.anotaron;
+    else         marcadorLocal.visitante_carreras += jugada.anotaron;
+  }
+  if (esHit) {
+    if (esLocal) marcadorLocal.local_hits++;
+    else         marcadorLocal.visitante_hits++;
+  }
+  if (jugada.tipo === 'E') {
+    if (esLocal) marcadorLocal.visitante_errores++; // error del campo (visitante fielding)
+    else         marcadorLocal.local_errores++;
+  }
+
+  // Update UI
+  const lScore = document.querySelector('.lsn');
+  const scores = document.querySelectorAll('.lsn');
+  if (scores.length >= 2) {
+    scores[0].textContent = marcadorLocal.local_carreras;
+    scores[1].textContent = marcadorLocal.visitante_carreras;
+  }
+}
+
+// ── Store current game info for offline use ──
+window._juegoActual = null;
+
+async function startGame(juegoData) {
+  window._juegoActual = juegoData;
+  // Reset local scoreboard
+  Object.assign(marcadorLocal, {
+    local_carreras:0, visitante_carreras:0,
+    local_hits:0,     visitante_hits:0,
+    local_errores:0,  visitante_errores:0,
+  });
+  // Cache to IndexedDB in case page reloads
+  await dbPut('cache', { key: 'juego_actual', value: juegoData });
+  // Mark game as in_progress
+  await queueOrPost({ action: 'updateJuego', id: juegoData.id, estado: 'en_vivo', iniciado: new Date().toISOString() });
+  toast('🔴 Juego iniciado · Modo offline activado automáticamente si pierdes señal');
+}
+
+// ── Restore game state if page refreshes ──
+async function restoreGameState() {
+  if (!db) return;
+  const cached = await new Promise(resolve => {
+    const tx  = db.transaction('cache', 'readonly');
+    const req = tx.objectStore('cache').get('juego_actual');
+    req.onsuccess = () => resolve(req.result?.value || null);
+    req.onerror   = () => resolve(null);
+  });
+  if (cached) {
+    window._juegoActual = cached;
+    // Restore local jugadas
+    const jugadasLocal = await dbGetAll('jugadas_local', 'juego_id', cached.id);
+    jugadasLocal.forEach(j => updateMarcadorLocal(j));
+    if (jugadasLocal.length > 0) {
+      toast('📲 Juego restaurado · ' + jugadasLocal.length + ' jugadas locales');
+    }
+  }
+}
+
+// ── Register Service Worker for full offline caching ──
+async function registerSW() {
+  if ('serviceWorker' in navigator) {
+    try {
+      // Inline SW as blob URL since we're single-file
+      const swCode = `
+const CACHE = 'liga-softbol-v1';
+const ASSETS = [self.location.pathname];
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(keys =>
+    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+  ));
+  self.clients.claim();
+});
+self.addEventListener('fetch', e => {
+  if (e.request.url.includes('script.google.com')) return; // Don't cache API
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        if (res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      }).catch(() => cached);
+    })
+  );
+});
+      `;
+      const blob   = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl  = URL.createObjectURL(blob);
+      await navigator.serviceWorker.register(swUrl, { scope: '/' });
+      console.log('✅ Service Worker registrado');
+    } catch(e) {
+      console.warn('SW no disponible:', e.message);
+    }
+  }
+}
+
+// ── Init offline system ──
+async function initOffline() {
+  await openDB();
+  updateOnlineStatus();
+  await restoreGameState();
+  await updatePendingCount();
+  registerSW();
+}
 
 // ═══════════════ START ═══════════════
 init();
