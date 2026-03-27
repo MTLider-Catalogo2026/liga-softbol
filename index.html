@@ -487,10 +487,10 @@ body.is-offline .main{margin-top:32px}
 /* ══ LIVE REDESIGN — iScore inspired ══ */
 .live-screen{display:flex;flex-direction:column;min-height:100vh;background:var(--off)}
 /* Top scorebar */
-.scorebar{background:var(--navy-dk);padding:6px 12px;display:flex;align-items:center;gap:6px;flex-shrink:0;border-radius:0}
+.scorebar{background:var(--navy-dk);padding:8px 10px;display:flex;align-items:center;gap:4px;flex-shrink:0;border-radius:0;min-height:90px}
 .sb-team{flex:1;text-align:center}
-.sb-team-name{font-size:10px;font-weight:700;color:rgba(255,255,255,.55);letter-spacing:.06em;text-transform:uppercase}
-.sb-team-score{font-family:var(--fd);font-size:38px;font-weight:800;color:#fff;line-height:1}
+.sb-team-name{font-size:11px;font-weight:700;color:rgba(255,255,255,.65);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.sb-team-score{font-family:var(--fd);font-size:42px;font-weight:800;color:#fff;line-height:1;margin-top:3px}
 .sb-mid{text-align:center;flex-shrink:0;min-width:80px}
 .sb-count{font-size:11px;color:rgba(255,255,255,.5);font-weight:600;letter-spacing:.04em}
 .sb-inn{font-family:var(--fd);font-size:20px;font-weight:800;color:#fff}
@@ -574,6 +574,63 @@ body.is-offline .main{margin-top:32px}
 [data-theme="dark"] .bb-btn{background:#252a45;border-color:#353a60;color:#aab0d0}
 [data-theme="dark"] .lineup-strip-bar{background:#1a1e35;border-color:#252a45}
 [data-theme="dark"] .ps-box{background:#252a45}
+
+/* ── Lineup Sheet ── */
+#lineup-sheet { display:flex; flex-direction:column; }
+.lineup-row {
+  display:flex; align-items:center; gap:10px;
+  padding:11px 14px; border-bottom:1px solid var(--g100);
+  background:var(--white); cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .12s;
+}
+.lineup-row:active { background:var(--g100); }
+.lineup-row.bench { background:var(--off); }
+.lineup-row.bench .lr-name { color:var(--g400); }
+.lr-turno {
+  width:28px; height:28px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--fd); font-size:15px; font-weight:800;
+  flex-shrink:0; border:2px solid var(--g200); color:var(--g400);
+}
+.lr-turno.assigned { background:var(--navy); color:#fff; border-color:var(--navy); }
+.lr-turno.bench-t  { background:var(--g100); color:var(--g400); font-size:10px; }
+.lr-jersey {
+  width:36px; height:36px; border-radius:8px;
+  background:var(--g100); display:flex; align-items:center;
+  justify-content:center; font-family:var(--fd); font-size:14px;
+  font-weight:800; color:var(--navy); flex-shrink:0; border:1px solid var(--g200);
+}
+.lr-name { flex:1; font-size:14px; font-weight:600; color:var(--navy); min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lr-pos-badge {
+  padding:5px 10px; border-radius:20px; font-size:12px; font-weight:700;
+  border:1.5px solid var(--g200); color:var(--g600); background:var(--white);
+  flex-shrink:0; min-width:38px; text-align:center;
+}
+.lr-pos-badge.has-pos { border-color:var(--navy); color:var(--navy); background:rgba(26,43,139,.07); }
+/* Position picker list */
+.pos-item, .turno-item {
+  display:flex; align-items:center; gap:8px;
+  padding:13px 14px; border-bottom:1px solid var(--g100);
+  cursor:pointer; -webkit-tap-highlight-color:transparent; transition:all .12s;
+}
+.pos-item:active, .turno-item:active { background:var(--g100); }
+.pos-item.sel { background:rgba(26,43,139,.07); }
+.turno-item.sel { background:rgba(204,31,45,.07); }
+.pos-num { font-family:var(--fd); font-size:18px; font-weight:800; color:var(--navy); width:24px; text-align:center; flex-shrink:0; }
+.pos-name { font-size:13px; font-weight:600; color:var(--g800); }
+.pos-full { font-size:11px; color:var(--g400); }
+.turno-num { font-family:var(--fd); font-size:22px; font-weight:800; color:var(--red); width:28px; text-align:center; flex-shrink:0; }
+.turno-lbl { font-size:12px; font-weight:600; color:var(--g600); }
+.check-circle { width:20px; height:20px; border-radius:50%; border:2px solid var(--g200); margin-left:auto; flex-shrink:0; }
+.check-circle.checked { background:var(--navy); border-color:var(--navy); display:flex; align-items:center; justify-content:center; }
+.check-circle.checked::after { content:"✓"; color:#fff; font-size:11px; font-weight:700; }
+[data-theme="dark"] .lineup-row { background:#1a1e35; border-color:#252a45; }
+[data-theme="dark"] .lineup-row.bench { background:#10131f; }
+[data-theme="dark"] .lr-jersey { background:#252a45; border-color:#353a60; }
+[data-theme="dark"] .pos-item, [data-theme="dark"] .turno-item { border-color:#252a45; }
+[data-theme="dark"] .pos-item.sel { background:rgba(91,123,255,.12); }
+[data-theme="dark"] .turno-item.sel { background:rgba(255,68,85,.12); }
 </style>
 </head>
 <body>
@@ -948,89 +1005,72 @@ body.is-offline .main{margin-top:32px}
 </div>
 
 <!-- MODAL: Lineup / Alineación antes del juego -->
-<div class="modal-bg" id="modal-lineup">
-  <div class="modal" style="max-width:500px">
-    <div class="modal-title" id="lineup-title">⚾ Alineación del juego</div>
-    <div style="font-size:12px;color:var(--g400);margin-bottom:14px" id="lineup-subtitle">Confirma el lineup antes de iniciar</div>
-    <!-- Tabs equipos -->
-    <div style="display:flex;gap:4px;margin-bottom:14px;background:var(--g100);border-radius:var(--r-md);padding:4px">
-      <button id="lineup-tab-local" onclick="switchLineupTab('local')"
-        style="flex:1;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:var(--navy);color:#fff;transition:all .15s" id="lineup-tab-local">
-        🏠 <span id="lineup-tab-local-name">Local</span>
-      </button>
-      <button id="lineup-tab-vis" onclick="switchLineupTab('visitante')"
-        style="flex:1;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--g600);transition:all .15s">
-        ✈️ <span id="lineup-tab-vis-name">Visitante</span>
-      </button>
+<!-- LINEUP FULLSCREEN SHEET -->
+<div class="popup-overlay" id="lineup-overlay" onclick="closeLineupSheet()" style="z-index:800"></div>
+<div class="playtype-sheet" id="lineup-sheet" style="z-index:801;max-height:95vh;border-radius:16px 16px 0 0">
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--g100)">
+    <button onclick="closeLineupSheet()" style="background:none;border:none;font-size:13px;font-weight:600;color:var(--g400);cursor:pointer;padding:4px 8px">Cancelar</button>
+    <div style="text-align:center">
+      <div style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--navy)" id="lineup-title">⚾ Alineación</div>
+      <div style="font-size:11px;color:var(--g400)" id="lineup-subtitle">Asigna posición y turno al bat</div>
     </div>
-    <!-- Pitcher selector -->
-    <div style="background:var(--off);border:1px solid var(--g200);border-radius:var(--r-md);padding:11px 13px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--navy);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px">⚾ Pitcher abridor</div>
-      <select class="form-input sel" id="lineup-pitcher" style="width:100%"></select>
+    <button onclick="confirmarLineupYIniciar()" style="background:var(--red);border:none;color:#fff;border-radius:20px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer">▶ JUGAR</button>
+  </div>
+  <!-- Team tabs -->
+  <div style="display:flex;padding:10px 14px 0;gap:8px;background:var(--off)">
+    <button id="lineup-tab-local" onclick="switchLineupTab('local')"
+      style="flex:1;padding:9px;border-radius:10px 10px 0 0;border:none;font-size:13px;font-weight:700;cursor:pointer;background:var(--white);color:var(--navy);border-bottom:3px solid var(--red);box-shadow:var(--sh-sm)">
+      🏠 <span id="lineup-tab-local-name">Local</span>
+    </button>
+    <button id="lineup-tab-vis" onclick="switchLineupTab('visitante')"
+      style="flex:1;padding:9px;border-radius:10px 10px 0 0;border:none;font-size:13px;font-weight:700;cursor:pointer;background:var(--g100);color:var(--g400);border-bottom:3px solid transparent">
+      ✈️ <span id="lineup-tab-vis-name">Visitante</span>
+    </button>
+  </div>
+  <!-- Pitcher abridor -->
+  <div style="padding:10px 14px;background:var(--white);border-bottom:1px solid var(--g100)">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="font-size:11px;font-weight:700;color:var(--navy);letter-spacing:.05em;text-transform:uppercase;flex-shrink:0">⚾ Pitcher abridor</div>
+      <select class="form-input sel" id="lineup-pitcher" style="flex:1;font-size:12px"></select>
     </div>
-    <!-- Orden al bate -->
-    <div style="font-size:11px;font-weight:700;color:var(--navy);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px">
-      📋 Orden al bate <span style="font-size:10px;font-weight:400;color:var(--g400)">(toca una jugadora para cambiar posición o turno)</span>
-    </div>
-    <div id="lineup-grid" style="display:flex;flex-direction:column;gap:5px;max-height:320px;overflow-y:auto"></div>
-    <!-- No hay jugadoras -->
-    <div id="lineup-empty" style="display:none;text-align:center;padding:24px;color:var(--g400)">
-      <div style="font-size:24px;margin-bottom:7px">👥</div>
-      <div style="font-size:13px;font-weight:600;margin-bottom:5px">Sin jugadoras cargadas</div>
-      <div style="font-size:12px">Conecta el backend y asegúrate de tener jugadoras en el roster</div>
-    </div>
-    <div class="modal-actions" style="margin-top:12px">
-      <button class="btn btn-sm" onclick="closeModal('modal-lineup')">Cancelar</button>
-      <button class="btn btn-red btn-sm" style="flex:1" onclick="confirmarLineupYIniciar()">🔴 ¡Jugar!</button>
-    </div>
+  </div>
+  <!-- Lineup list -->
+  <div id="lineup-grid" style="overflow-y:auto;flex:1;background:var(--off)"></div>
+  <div id="lineup-empty" style="display:none;text-align:center;padding:36px;color:var(--g400)">
+    <div style="font-size:28px;margin-bottom:8px">👥</div>
+    <div style="font-size:13px;font-weight:600;color:var(--g600);margin-bottom:4px">Sin jugadoras cargadas</div>
+    <div style="font-size:12px">Verifica la conexión al backend</div>
   </div>
 </div>
 
-<!-- MODAL: Editar posición en lineup -->
-<div class="modal-bg" id="modal-lineup-pos">
-  <div class="modal" style="max-width:320px">
-    <div class="modal-title" id="lpos-title">Posición en el juego</div>
-    <input type="hidden" id="lpos-jug-id">
-    <input type="hidden" id="lpos-equipo">
-    <div class="form-row">
-      <label class="form-label">Posición defensiva</label>
-      <select class="form-input sel" id="lpos-pos">
-        <option value="P">P — Pitcher</option>
-        <option value="C">C — Catcher</option>
-        <option value="1B">1B — Primera base</option>
-        <option value="2B">2B — Segunda base</option>
-        <option value="3B">3B — Tercera base</option>
-        <option value="SS">SS — Shortstop</option>
-        <option value="LF">LF — Left Field</option>
-        <option value="CF">CF — Center Field</option>
-        <option value="RF">RF — Right Field</option>
-        <option value="DH">DH — Designated Hitter</option>
-        <option value="BN">BN — Banca (no juega)</option>
-      </select>
+<!-- POSITION PICKER SHEET (replaces modal-lineup-pos) -->
+<div class="popup-overlay" id="lpos-overlay" onclick="closeLposSheet()" style="z-index:900"></div>
+<div class="playtype-sheet" id="lpos-sheet" style="z-index:901;max-height:90vh">
+  <div style="display:flex;justify-content:flex-end;padding:10px 14px 0"><button onclick="closeLposSheet()" style="background:none;border:none;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;padding:4px 12px;border-radius:20px;background:var(--g100)">✓ Listo</button></div>
+  <input type="hidden" id="lpos-jug-id">
+  <input type="hidden" id="lpos-equipo">
+  <!-- Player name header -->
+  <div style="padding:0 16px 10px;border-bottom:1px solid var(--g100)">
+    <div style="font-family:var(--fd);font-size:18px;font-weight:800;color:var(--navy)" id="lpos-title">Jugadora</div>
+    <div style="font-size:12px;color:var(--g400)">Selecciona posición defensiva y turno al bat</div>
+  </div>
+  <!-- Two-column layout: position | batting order -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;height:calc(100% - 80px)">
+    <!-- LEFT: Position -->
+    <div style="border-right:1px solid var(--g100);overflow-y:auto">
+      <div style="font-size:10px;font-weight:700;color:var(--g600);padding:10px 12px 6px;letter-spacing:.07em;text-transform:uppercase;position:sticky;top:0;background:var(--white);z-index:1">Posición defensiva</div>
+      <div id="lpos-pos-list"></div>
     </div>
-    <div class="form-row">
-      <label class="form-label">Turno al bate</label>
-      <select class="form-input sel" id="lpos-turno">
-        <option value="0">No batea (pitcher/banca)</option>
-        <option value="1">1° turno</option>
-        <option value="2">2° turno</option>
-        <option value="3">3° turno</option>
-        <option value="4">4° turno (4to bate / cleanup)</option>
-        <option value="5">5° turno</option>
-        <option value="6">6° turno</option>
-        <option value="7">7° turno</option>
-        <option value="8">8° turno</option>
-        <option value="9">9° turno</option>
-        <option value="10">10° turno</option>
-        <option value="11">11° turno</option>
-        <option value="12">12° turno</option>
-      </select>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-sm" onclick="closeModal('modal-lineup-pos')">Cancelar</button>
-      <button class="btn btn-navy btn-sm" onclick="saveLineupPos()">✅ Guardar</button>
+    <!-- RIGHT: Batting order -->
+    <div style="overflow-y:auto">
+      <div style="font-size:10px;font-weight:700;color:var(--g600);padding:10px 12px 6px;letter-spacing:.07em;text-transform:uppercase;position:sticky;top:0;background:var(--white);z-index:1">Turno al bat</div>
+      <div id="lpos-turno-list"></div>
     </div>
   </div>
+  <!-- Hidden selects for backward compat -->
+  <select id="lpos-pos" style="display:none"></select>
+  <select id="lpos-turno" style="display:none"></select>
 </div>
 
 <!-- MODAL: Extra inning — corredor en 2da -->
@@ -1301,11 +1341,17 @@ body.is-offline .main{margin-top:32px}
         <div class="sb-inn"><span id="live-inning-num">1</span>° <span style="font-size:14px;font-weight:500" id="live-inn-arrow">▲</span></div>
         <div class="sb-outs" id="live-outs-dots">0 outs</div>
         <div style="margin-top:4px">
-          <svg viewBox="0 0 60 60" width="44" height="44">
-            <polygon points="30,3 57,30 30,57 3,30" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="1.5"/>
-            <rect id="d-2b" x="20" y="1" width="11" height="11" rx="2" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.2)" stroke-width="1" transform="rotate(45 25.5 6.5)"/>
-            <rect id="d-1b" x="44" y="20" width="11" height="11" rx="2" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.2)" stroke-width="1" transform="rotate(45 49.5 25.5)"/>
-            <rect id="d-3b" x="1"  y="20" width="11" height="11" rx="2" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.2)" stroke-width="1" transform="rotate(45 6.5 25.5)"/>
+          <svg viewBox="0 0 60 60" width="48" height="48">
+            <!-- Outer diamond outline -->
+            <polygon points="30,4 56,30 30,56 4,30" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="1.5"/>
+            <!-- 2B (top) -->
+            <polygon id="d-2b" points="30,6 38,14 30,22 22,14" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.25)" stroke-width="1.5"/>
+            <!-- 1B (right) -->
+            <polygon id="d-1b" points="46,22 54,30 46,38 38,30" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.25)" stroke-width="1.5"/>
+            <!-- 3B (left) -->
+            <polygon id="d-3b" points="6,22 14,30 6,38 0,30" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.25)" stroke-width="1.5"/>
+            <!-- Home plate -->
+            <polygon points="22,38 30,54 38,38 30,46" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
           </svg>
         </div>
       </div>
@@ -1873,7 +1919,7 @@ function initPlayerStats(jId){
   if(!gameStats[jId]) gameStats[jId] = { ab:0, h:0, rbi:0, bb:0, k:0, plays:[] };
 }
 
-function recordStat(jugadoraId, tipo, rbi, inn, mitad, desc, runners){
+function recordStat(jugadoraId, tipo, rbi, inn, mitad, desc, runners, equipo){
   initPlayerStats(jugadoraId);
   if(!jugadoraId) return;
   const s = gameStats[jugadoraId];
@@ -1886,6 +1932,7 @@ function recordStat(jugadoraId, tipo, rbi, inn, mitad, desc, runners){
   if(isK)   s.k++;
   if(isBB)  s.bb++;
   s.rbi += (rbi||0);
+  if(equipo) s.equipo = equipo; // track which team
   s.plays.push({ inn, mitad, tipo, desc:desc||'', rbi:rbi||0, runners:runners||[] });
 }
 
@@ -1957,10 +2004,15 @@ function advanceBases(tipo, batterid){
   const scored = [];
 
   if(tipo==='HR'){
-    // Batter + all runners score
-    ['3B','2B','1B'].forEach(b=>{ if(bases[b]){ scored.push(bases[b]); bases[b]=null; } });
-    scored.push(batterid);
-    return scored;
+    // Collect ALL runners first, then clear bases
+    if(bases['3B']) scored.push(bases['3B']);
+    if(bases['2B']) scored.push(bases['2B']);
+    if(bases['1B']) scored.push(bases['1B']);
+    scored.push(batterid); // batter always scores on HR
+    // Now clear all bases
+    bases['3B']=null; bases['2B']=null; bases['1B']=null;
+    updDiamond(); // update diamond (all empty after HR)
+    return scored; // scored.length = runners + 1 (batter)
   }
 
   if(tipo==='3B'){
@@ -2180,8 +2232,13 @@ function openFlyDetail(tipo, subtype){
 const linescoreData = { local:[], visitante:[] }; // runs per inning index
 
 function initLinescore(){
-  linescoreData.local    = Array(lInningsRegular).fill(null);
-  linescoreData.visitante= Array(lInningsRegular).fill(null);
+  linescoreData.local     = Array(lInningsRegular).fill(null);
+  linescoreData.visitante = Array(lInningsRegular).fill(null);
+  // Clear previous cells
+  const cells = document.getElementById('ls-innings-cells');
+  const rhe   = document.getElementById('ls-rhe-cells');
+  if(cells) cells.innerHTML='';
+  if(rhe)   rhe.innerHTML='';
   renderLinescore();
 }
 
@@ -2189,49 +2246,72 @@ function renderLinescore(){
   const cells = document.getElementById('ls-innings-cells');
   const rhe   = document.getElementById('ls-rhe-cells');
   if(!cells||!rhe) return;
-  // Inn headers + data cells
-  const totalInns = Math.max(lInningsRegular, lInning);
+
+  const totalInns = Math.max(lInningsRegular||7, lInning||1);
   let hdr='', localRow='', visRow='';
+
   for(let i=0;i<totalInns;i++){
-    const isCur = i===lInning-1;
-    const lVal  = linescoreData.local[i]!==null ? linescoreData.local[i] : (i<lInning-1?'0':'');
-    const vVal  = linescoreData.visitante[i]!==null ? linescoreData.visitante[i] : (i<lInning-1?'0':'');
-    hdr      += `<div class="ls-cell${isCur?' act':''}" style="color:rgba(255,255,255,.4);font-size:10px">${i+1}</div>`;
-    localRow += `<div class="ls-cell${isCur?' act':''}" id="ls-local-${i}">${lVal}</div>`;
-    visRow   += `<div class="ls-cell${isCur?' act':''}" id="ls-vis-${i}">${vVal}</div>`;
+    const isCur = i===(lInning-1);
+    const isPast = i < (lInning-1);
+    const lRaw  = linescoreData.local[i];
+    const vRaw  = linescoreData.visitante[i];
+    // Only show 0 for completed innings, blank for future/current
+    const lVal  = (lRaw !== null && lRaw !== undefined) ? String(lRaw) : (isPast?'0':'');
+    const vVal  = (vRaw !== null && vRaw !== undefined) ? String(vRaw) : (isPast?'0':'');
+    const actCls= isCur?' act':'';
+    hdr      += `<div class="ls-cell${actCls}" style="color:rgba(255,255,255,.45);font-size:10px;font-weight:700">${i+1}</div>`;
+    localRow += `<div class="ls-cell${actCls}" id="ls-local-${i}">${lVal}</div>`;
+    visRow   += `<div class="ls-cell${actCls}" id="ls-vis-${i}">${vVal}</div>`;
   }
+
   cells.innerHTML = `<div style="display:flex;flex-direction:column">
     <div style="display:flex">${hdr}</div>
     <div style="display:flex">${localRow}</div>
     <div style="display:flex">${visRow}</div>
   </div>`;
-  // R H E
+
+  // R H E — count hits safely
+  let hLocal=0, hVis=0;
+  try{
+    Object.values(gameStats).forEach(s=>{
+      const h = parseInt(s.h)||0;
+      if(s.equipo==='local') hLocal+=h;
+      else hVis+=h;
+    });
+  }catch(e){}
+
+  const rLocal = typeof lLocalScore==='number' ? lLocalScore : 0;
+  const rVis   = typeof lVisScore==='number'   ? lVisScore   : 0;
+
   rhe.innerHTML = `
     <div style="display:flex;flex-direction:column">
       <div style="display:flex">
         <div class="ls-cell rhe-lbl">R</div><div class="ls-cell rhe-lbl">H</div><div class="ls-cell rhe-lbl">E</div>
       </div>
       <div style="display:flex">
-        <div class="ls-cell rhe-val" id="ls-r-local">${lLocalScore}</div>
-        <div class="ls-cell rhe-val">${gameStats? Object.values(gameStats).reduce((a,s)=>(s.equipo==='local'?a+s.h:a),0) :0}</div>
+        <div class="ls-cell rhe-val" id="ls-r-local">${rLocal}</div>
+        <div class="ls-cell rhe-val">${hLocal}</div>
         <div class="ls-cell">0</div>
       </div>
       <div style="display:flex">
-        <div class="ls-cell rhe-val" id="ls-r-vis">${lVisScore}</div>
-        <div class="ls-cell rhe-val">0</div>
+        <div class="ls-cell rhe-val" id="ls-r-vis">${rVis}</div>
+        <div class="ls-cell rhe-val">${hVis}</div>
         <div class="ls-cell">0</div>
       </div>
     </div>`;
 }
 
 function updateLinescoreRun(equipo, inning, runs){
-  const idx = inning-1;
+  const safeRuns = parseInt(runs)||0;
+  if(safeRuns<=0) return;
+  const idx = Math.max(0, (inning||1)-1);
+  // Ensure array is long enough
+  while(linescoreData.local.length    <= idx) linescoreData.local.push(null);
+  while(linescoreData.visitante.length<= idx) linescoreData.visitante.push(null);
   if(equipo==='local'){
-    if(linescoreData.local[idx]===null) linescoreData.local[idx]=0;
-    linescoreData.local[idx]+=runs;
+    linescoreData.local[idx] = (parseInt(linescoreData.local[idx])||0) + safeRuns;
   } else {
-    if(linescoreData.visitante[idx]===null) linescoreData.visitante[idx]=0;
-    linescoreData.visitante[idx]+=runs;
+    linescoreData.visitante[idx] = (parseInt(linescoreData.visitante[idx])||0) + safeRuns;
   }
   renderLinescore();
 }
@@ -2373,11 +2453,22 @@ function updLiveUI(){
   const vs = document.getElementById('live-vis-score');
   if(ls) ls.textContent=lLocalScore;
   if(vs) vs.textContent=lVisScore;
+  // Update team names in scorebar from game data
+  const j = window._juegoActual;
+  if(j){
+    const ln=document.getElementById('live-local-name');
+    const vn=document.getElementById('live-vis-name');
+    const lsn=document.getElementById('ls-local-name');
+    const vsn=document.getElementById('ls-vis-name');
+    const lname = j.local_nombre||'LOCAL';
+    const vname = j.visitante_nombre||'VISITANTE';
+    if(ln)  ln.textContent  = lname.toUpperCase();
+    if(vn)  vn.textContent  = vname.toUpperCase();
+    if(lsn) lsn.textContent = lname.substring(0,6).toUpperCase();
+    if(vsn) vsn.textContent = vname.substring(0,6).toUpperCase();
+  }
   // Linescore totals
-  const lr=document.getElementById('ls-r-local');
-  const vr=document.getElementById('ls-r-vis');
-  if(lr) lr.textContent=lLocalScore;
-  if(vr) vr.textContent=lVisScore;
+  renderLinescore();
   // Pitch badge
   const pb=document.getElementById('pitch-total-badge');
   if(pb) pb.textContent='T: '+lTotalPitches;
@@ -2407,7 +2498,7 @@ async function addPitch(type){
     if(lBalls===4){ await regPlay('BB'); return; }
   } else if(type==='s'){
     lStrikes=Math.min(lStrikes+1,3); lTotalStrikes++;
-    if(lStrikes===3){ await regPlay('K'); return; }
+    if(lStrikes===3){ openPlaySheet('out'); return; } // Open OUT sheet to choose K type
   } else if(type==='f'){
     lFouls++; lTotalFouls++;
     if(lStrikes<2) lStrikes++;
@@ -2416,51 +2507,57 @@ async function addPitch(type){
 }
 
 async function regPlay(r, detalle={}){
-  // Update outs
+  // ── 1. Capture batting context BEFORE anything changes ──
+  const batterid   = lCurrentBatter?.id;
+  const isBatLocal = lMitad==='baja';
+  const _inn       = lInning;  // capture for linescore
+
+  // ── 2. Advance bases & tally runs (BEFORE out processing) ──
+  const runners = advanceBases(r, batterid);
+  const autoRbi = runners.length;
+  const rbi = (detalle.rbi !== undefined && detalle.rbi > 0)
+    ? detalle.rbi
+    : autoRbi;
+
+  // ── 3. Update scoreboard with correct team and inning ──
+  if(rbi > 0){
+    if(isBatLocal){ lLocalScore += rbi; updateLinescoreRun('local',    _inn, rbi); }
+    else           { lVisScore   += rbi; updateLinescoreRun('visitante', _inn, rbi); }
+  }
+
+  // ── 4. Process outs AFTER scoring (may flip lMitad/lInning) ──
   if(['K','GO','FO','LO'].includes(r)){
-    // Track last out for extra innings runner rule
-    lUltimoOut = lCurrentBatter ? {...lCurrentBatter, equipo: lMitad==='alta'?'visitante':'local'} : lUltimoOut;
+    lUltimoOut = lCurrentBatter
+      ? {...lCurrentBatter, equipo: isBatLocal?'local':'visitante'}
+      : lUltimoOut;
     lOuts++;
     if(lOuts>=3){
       lOuts=0;
-      clearBases(); // ← clear bases when 3 outs
+      clearBases();
       if(lMitad==='alta') lMitad='baja';
       else{ lMitad='alta'; lInning++; }
     }
   }
-  // Determine RBI from detail or auto-calculate from base runners
-  const batterid   = lCurrentBatter?.id;
-  const isBatLocal = lMitad==='baja';
-  const runners    = advanceBases(r, batterid);
-  const autoRbi    = runners.length; // runners who actually scored per base tracking
-  // Use explicit detalle.rbi if set (manual override), otherwise use auto-calculated
-  // Exception: if detalle.rbi = 0 but we detected runners, trust auto (user may not have set RBI)
-  const rbi = (detalle.rbi !== undefined && detalle.rbi > 0)
-    ? detalle.rbi   // manual override wins
-    : autoRbi;      // auto-calculated from base runners
-
-  // Update scoreboard
-  if(rbi > 0){
-    if(isBatLocal){ lLocalScore += rbi; updateLinescoreRun('local',lInning,rbi); }
-    else           { lVisScore   += rbi; updateLinescoreRun('visitante',lInning,rbi); }
-  }
 
   // Record in game stats
   const runnerNames = getRunnerNames(runners);
-  recordStat(batterid, r, rbi, lInning, lMitad, detalle.desc||'', runnerNames);
+  recordStat(batterid, r, rbi, _inn, lMitad, detalle.desc||'', runnerNames, isBatLocal?'local':'visitante');
 
   // Build display label
   const descExtra = detalle.desc ? ` · ${detalle.desc}` : '';
   const offIcon   = isOnline?'':'📵';
   const rbiTxt    = rbi > 0 ? ` · ${rbi} RBI` : '';
 
+  // Capture display inning BEFORE potential side/inning change from outs
+  const _dispInn = _inn; const _dispMitad = lMitad==='alta'?'▼':'▲'; // show where it happened
+
   // Add to log
   const log = document.getElementById('play-log');
   const li  = document.createElement('li');
   li.className='pe';
-  li.innerHTML=`<span class="pi">Inn ${lInning} ${lMitad==='alta'?'▲':'▼'}</span>`+
+  li.innerHTML=`<span class="pi">Inn ${_inn} ${isBatLocal?'▼':'▲'}</span>`+
     `<span class="ab ${rcls[r]||''}" style="margin-right:7px">${r}</span>`+
-    `<span class="pr2" style="min-width:0;overflow:hidden">#${lCurrentBatter?.numero||'—'} ${lCurrentBatter?.nombre||'—'} — ${rdesc[r]||r}${descExtra}${rbiTxt} ${offIcon}</span>`+
+    `<span class="pr2" style="min-width:0;overflow:hidden">${lCurrentBatter?.nombre?'#'+lCurrentBatter.numero+' '+lCurrentBatter.nombre:'Turno '+lTurno} — ${rdesc[r]||r}${descExtra}${rbiTxt} ${offIcon}</span>`+
     `<span class="pp2">${lPitches} lanz.</span>`;
   if(log.querySelector('li[style]')) log.innerHTML='';
   log.insertBefore(li,log.firstChild);
@@ -2476,10 +2573,10 @@ async function regPlay(r, detalle={}){
   await queueOrPost({
     action:       'addJugada',
     juego_id:     window._juegoId||'JUEGO_LOCAL',
-    jugadora_id:  lCurrentBatter?.id||'',
+    jugadora_id:  batterid||'',
     jugadora_nombre: lCurrentBatter?.nombre||'',
-    inning:       lInning,
-    mitad:        lMitad,
+    inning:       _inn,
+    mitad:        isBatLocal?'baja':'alta',
     tipo:         r,
     zona:         detalle.zona   || '',
     tipo_contacto:detalle.tipo   || '',
@@ -2493,9 +2590,8 @@ async function regPlay(r, detalle={}){
     anotaron:     rbi,
     outs_antes:   lOuts,
   });
-  toast((isOnline?'✅':'📵')+' '+(rdesc[r]||r)+(descExtra||'')+' registrado');
+  toast((isOnline?'✅':'📵')+' '+(rdesc[r]||r)+(descExtra||'')+(rbiTxt||'')+' registrado');
 }
-
 function undoLastPlay(){ toast('↩ Deshacer — próximamente'); }
 function endInning(){
   lOuts=0;
@@ -3162,8 +3258,13 @@ function doIniciarJuego(juego){
   // Mark game as in_vivo
   queueOrPost({ action:'updateJuego', id:juego.id, estado:'en_vivo', iniciado: new Date().toISOString() }).catch(()=>{});
 
-  // Init linescore
+  // Init linescore with team names
   initLinescore();
+  // Set team names in linescore strip
+  const _lname = juego.local_nombre||'LOCAL';
+  const _vname = juego.visitante_nombre||'VISITANTE';
+  const lsn=document.getElementById('ls-local-name'); if(lsn) lsn.textContent=_lname.substring(0,8).toUpperCase();
+  const vsn=document.getElementById('ls-vis-name');   if(vsn) vsn.textContent=_vname.substring(0,8).toUpperCase();
   // Navigate to live screen
   go('live', null);
   // Highlight live button in sidebar
@@ -3325,7 +3426,10 @@ async function openLineupModal(juego){
   lLineupVisitante = buildDefaultLineup(vRes?.jugadoras||[], 'visitante');
 
   switchLineupTab('local');
-  openModal('modal-lineup');
+  // Open lineup as bottom sheet
+  document.getElementById('lineup-overlay').classList.add('show');
+  document.getElementById('lineup-sheet').classList.add('show');
+  setTimeout(()=>renderLineupGrid(),50);
 }
 
 function buildDefaultLineup(jugadoras, equipo){
@@ -3343,95 +3447,170 @@ function buildDefaultLineup(jugadoras, equipo){
   }));
 }
 
+function closeLineupSheet(){
+  document.getElementById('lineup-overlay').classList.remove('show');
+  document.getElementById('lineup-sheet').classList.remove('show');
+}
 function switchLineupTab(tab){
   _lineupTab=tab;
   const localBtn = document.getElementById('lineup-tab-local');
   const visBtn   = document.getElementById('lineup-tab-vis');
   if(tab==='local'){
-    if(localBtn){ localBtn.style.background='var(--navy)'; localBtn.style.color='#fff'; }
-    if(visBtn)  { visBtn.style.background='transparent';   visBtn.style.color='var(--g600)'; }
+    if(localBtn){ localBtn.style.background='var(--white)'; localBtn.style.color='var(--navy)'; localBtn.style.borderBottom='3px solid var(--red)'; }
+    if(visBtn)  { visBtn.style.background='var(--g100)';    visBtn.style.color='var(--g400)';   visBtn.style.borderBottom='3px solid transparent'; }
   } else {
-    if(visBtn)  { visBtn.style.background='var(--navy)';   visBtn.style.color='#fff'; }
-    if(localBtn){ localBtn.style.background='transparent'; localBtn.style.color='var(--g600)'; }
+    if(visBtn)  { visBtn.style.background='var(--white)';   visBtn.style.color='var(--navy)';   visBtn.style.borderBottom='3px solid var(--red)'; }
+    if(localBtn){ localBtn.style.background='var(--g100)';  localBtn.style.color='var(--g400)'; localBtn.style.borderBottom='3px solid transparent'; }
   }
   renderLineupGrid();
 }
 
+const POSITIONS = [
+  {val:'BN', num:'—', name:'Banca', full:'No juega (sustituto)'},
+  {val:'P',  num:'1', name:'P',     full:'Pitcher'},
+  {val:'C',  num:'2', name:'C',     full:'Catcher'},
+  {val:'1B', num:'3', name:'1B',    full:'Primera Base'},
+  {val:'2B', num:'4', name:'2B',    full:'Segunda Base'},
+  {val:'3B', num:'5', name:'3B',    full:'Tercera Base'},
+  {val:'SS', num:'6', name:'SS',    full:'Shortstop'},
+  {val:'LF', num:'7', name:'LF',    full:'Left Field'},
+  {val:'CF', num:'8', name:'CF',    full:'Center Field'},
+  {val:'RF', num:'9', name:'RF',    full:'Right Field'},
+  {val:'DH', num:'DH',name:'DH',   full:'Designated Hitter'},
+];
+const MAX_BATTERS = 12;
+
 function renderLineupGrid(){
-  const lineup = _lineupTab==='local' ? lLineupLocal : lLineupVisitante;
-  const grid   = document.getElementById('lineup-grid');
-  const empty  = document.getElementById('lineup-empty');
-  const pitcherSel = document.getElementById('lineup-pitcher');
+  const lineup    = _lineupTab==='local' ? lLineupLocal : lLineupVisitante;
+  const grid      = document.getElementById('lineup-grid');
+  const empty     = document.getElementById('lineup-empty');
+  const pitcherSel= document.getElementById('lineup-pitcher');
 
   if(!lineup||!lineup.length){
-    if(grid)  grid.style.display='none';
+    if(grid)  grid.innerHTML=''; grid && (grid.style.display='none');
     if(empty) empty.style.display='block';
     if(pitcherSel) pitcherSel.innerHTML='<option>Sin jugadoras</option>';
     return;
   }
-
   if(empty) empty.style.display='none';
-  if(grid)  grid.style.display='flex';
+  if(grid)  grid.style.display='block';
 
   // Pitcher selector
   if(pitcherSel){
-    const pitchers = lineup.filter(j=>j.posicion==='P'||j.enJuego);
-    pitcherSel.innerHTML = pitchers.map(j=>`<option value="${j.id}" ${j.posicion==='P'?'selected':''}>
-      #${j.numero} ${j.nombre} (${j.posicion})
-    </option>`).join('');
+    pitcherSel.innerHTML = lineup.map(j=>
+      `<option value="${j.id}" ${j.posicion==='P'?'selected':''}>#${j.numero} ${j.nombre} (${j.posicion})</option>`
+    ).join('');
   }
 
-  // Sort: batters first by turno, bench last
+  // Sort: batters by turno, bench last
   const sorted = [...lineup].sort((a,b)=> a.turno===0?1:b.turno===0?-1:a.turno-b.turno);
 
   grid.innerHTML = sorted.map(j=>{
-    const isBench   = j.turno===0||!j.enJuego;
-    const bgColor   = isBench ? 'var(--g100)' : 'var(--white)';
-    const txtColor  = isBench ? 'var(--g400)'  : 'var(--navy)';
-    const turnoBadge= isBench
-      ? '<span style="font-size:10px;color:var(--g400);background:var(--g100);padding:2px 6px;border-radius:4px">BN</span>'
-      : `<span style="font-family:var(--fd);font-size:16px;font-weight:800;color:var(--navy);width:22px;text-align:center">${j.turno}</span>`;
-    return `<div onclick="editLineupPos('${j.id}')" style="display:flex;align-items:center;gap:9px;background:${bgColor};border:1px solid var(--g200);border-radius:var(--r-md);padding:8px 11px;cursor:pointer;transition:all .12s">
-      ${turnoBadge}
-      <div style="width:32px;height:32px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:13px;font-weight:800;color:#fff;flex-shrink:0">#${j.numero}</div>
+    const isBench = j.turno===0||!j.enJuego||j.posicion==='BN';
+    const hasPos  = j.posicion && j.posicion!=='POS';
+    return `<div class="lineup-row${isBench?' bench':''}" onclick="editLineupPos('${j.id}')">
+      <div class="lr-turno${isBench?' bench-t':j.turno?' assigned':''}">${isBench?'BN':j.turno||'—'}</div>
+      <div class="lr-jersey">#${j.numero||'?'}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:${txtColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.nombre}</div>
-        <div style="font-size:11px;color:var(--g400)">B:${j.batea} · L:${j.lanza}</div>
+        <div class="lr-name">${j.nombre}</div>
+        <div style="font-size:11px;color:var(--g400)">B:${j.batea||'D'} · L:${j.lanza||'D'}</div>
       </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div style="font-size:12px;font-weight:700;color:var(--navy);background:var(--g100);padding:2px 8px;border-radius:4px">${j.posicion}</div>
-        <div style="font-size:10px;color:var(--g400);margin-top:2px">✏️</div>
-      </div>
+      <div class="lr-pos-badge${hasPos&&!isBench?' has-pos':''}">${j.posicion||'POS'}</div>
     </div>`;
   }).join('');
 }
+
+// Current edit state for the position picker
+let _editingJugId = null;
+let _editingEquipo = null;
+let _editingPos  = null;
+let _editingTurno = 0;
 
 function editLineupPos(id){
   const lineup = _lineupTab==='local' ? lLineupLocal : lLineupVisitante;
   const j = lineup.find(x=>x.id===id);
   if(!j) return;
-  _lineupEditId = id;
-  document.getElementById('lpos-title').textContent = '#'+j.numero+' '+j.nombre;
+  _editingJugId  = id;
+  _editingEquipo = _lineupTab;
+  _editingPos    = j.posicion||'BN';
+  _editingTurno  = j.turno||0;
+
   document.getElementById('lpos-jug-id').value  = id;
   document.getElementById('lpos-equipo').value  = _lineupTab;
-  // Set position
-  const posEl=document.getElementById('lpos-pos');
-  for(let i=0;i<posEl.options.length;i++){ if(posEl.options[i].value===j.posicion){ posEl.selectedIndex=i; break; } }
-  // Set turno
-  const tEl=document.getElementById('lpos-turno');
-  for(let i=0;i<tEl.options.length;i++){ if(parseInt(tEl.options[i].value)===j.turno){ tEl.selectedIndex=i; break; } }
-  openModal('modal-lineup-pos');
+  document.getElementById('lpos-title').textContent = '#'+j.numero+' '+j.nombre;
+
+  // Render position list
+  const posList = document.getElementById('lpos-pos-list');
+  if(posList) posList.innerHTML = POSITIONS.map(p=>`
+    <div class="pos-item${_editingPos===p.val?' sel':''}" onclick="selectPos('${p.val}',this)">
+      <div class="pos-num">${p.num}</div>
+      <div><div class="pos-name">${p.name}</div><div class="pos-full">${p.full}</div></div>
+      <div class="check-circle${_editingPos===p.val?' checked':''}"></div>
+    </div>`).join('');
+
+  // Render batting order
+  const turnoList = document.getElementById('lpos-turno-list');
+  const turnosUsed = lineup.filter(x=>x.id!==id&&x.turno>0).map(x=>x.turno);
+  if(turnoList) turnoList.innerHTML = `
+    <div class="turno-item${_editingTurno===0?' sel':''}" onclick="selectTurno(0,this)">
+      <div class="turno-num" style="font-size:13px">BN</div>
+      <div class="turno-lbl">No batea<br><span style="font-size:10px;color:var(--g400)">Banca/pitcheo</span></div>
+      <div class="check-circle${_editingTurno===0?' checked':''}"></div>
+    </div>`+
+    Array.from({length:MAX_BATTERS},(_, i)=>{
+      const t   = i+1;
+      const used= turnosUsed.includes(t);
+      return `<div class="turno-item${_editingTurno===t?' sel':''}" onclick="selectTurno(${t},this)" style="${used?'opacity:.45':''}">
+        <div class="turno-num">${t}</div>
+        <div class="turno-lbl">${t===4?'4° — Cleanup':t+'° turno'}${used?'<br><span style="font-size:10px;color:var(--red)">Ya asignado</span>':''}</div>
+        <div class="check-circle${_editingTurno===t?' checked':''}"></div>
+      </div>`;
+    }).join('');
+
+  // Show sheet
+  document.getElementById('lpos-overlay').classList.add('show');
+  document.getElementById('lpos-sheet').classList.add('show');
+}
+
+function selectPos(val, btn){
+  _editingPos = val;
+  document.querySelectorAll('#lpos-pos-list .pos-item').forEach(el=>{
+    el.classList.remove('sel');
+    const cc = el.querySelector('.check-circle');
+    if(cc) cc.className='check-circle';
+  });
+  if(btn){ btn.classList.add('sel'); const cc=btn.querySelector('.check-circle'); if(cc){cc.className='check-circle checked';} }
+  saveLineupPos();
+}
+
+function selectTurno(val, btn){
+  _editingTurno = val;
+  document.querySelectorAll('#lpos-turno-list .turno-item').forEach(el=>{
+    el.classList.remove('sel');
+    const cc=el.querySelector('.check-circle');
+    if(cc) cc.className='check-circle';
+  });
+  if(btn){ btn.classList.add('sel'); const cc=btn.querySelector('.check-circle'); if(cc){cc.className='check-circle checked';} }
+  saveLineupPos();
 }
 
 function saveLineupPos(){
-  const id     = document.getElementById('lpos-jug-id').value;
-  const equipo = document.getElementById('lpos-equipo').value;
-  const pos    = document.getElementById('lpos-pos').value;
-  const turno  = parseInt(document.getElementById('lpos-turno').value)||0;
+  const id     = _editingJugId;
+  const equipo = _editingEquipo;
+  const pos    = _editingPos;
+  const turno  = _editingTurno;
+  if(!id||!equipo) return;
   const lineup = equipo==='local' ? lLineupLocal : lLineupVisitante;
   const j = lineup.find(x=>x.id===id);
-  if(j){ j.posicion=pos; j.turno=turno; j.enJuego=(pos!=='BN'&&turno>=0); }
-  closeModal('modal-lineup-pos');
+  if(j){ j.posicion=pos||j.posicion; j.turno=turno; j.enJuego=(pos!=='BN'); }
+  // Update the row in the grid immediately (without closing sheet)
+  renderLineupGrid();
+}
+
+function closeLposSheet(){
+  document.getElementById('lpos-overlay').classList.remove('show');
+  document.getElementById('lpos-sheet').classList.remove('show');
+  _editingJugId=null;
   renderLineupGrid();
 }
 
@@ -3451,7 +3630,7 @@ function confirmarLineupYIniciar(){
   const firstVis2 = lLineupVisitante.filter(j=>j.turno>0).sort((a,b)=>a.turno-b.turno)[0]||null;
   lCurrentBatter  = firstVis2;
 
-  closeModal('modal-lineup');
+  closeLineupSheet();
   // Now actually start the game
   const juego = window._pendingJuego;
   if(juego) doIniciarJuego(juego);
