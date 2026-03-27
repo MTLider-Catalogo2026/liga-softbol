@@ -698,16 +698,7 @@ body.is-offline .main{margin-top:32px}
         <input class="form-input" id="det-custom-input" placeholder="ej: 5-3, 6-4-3, DP 4-6-3" style="font-size:13px">
       </div>
     </div>
-    <!-- Carreras anotadas -->
-    <div id="det-rbi-section" style="margin-top:10px">
-      <label class="form-label">RBI (carreras producidas)</label>
-      <div style="display:flex;align-items:center;gap:10px">
-        <button class="btn btn-sm" onclick="adjRbi(-1)">−</button>
-        <span id="det-rbi-val" style="font-family:var(--fd);font-size:24px;font-weight:800;color:var(--navy);min-width:30px;text-align:center">0</span>
-        <button class="btn btn-sm" onclick="adjRbi(1)">+</button>
-        <span style="font-size:11px;color:var(--g400)">Carreras que anotaron en esta jugada</span>
-      </div>
-    </div>
+<!-- RBI removed — calculated automatically from base runners -->
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn btn-sm" onclick="skipDetalle()">Omitir detalle</button>
       <button class="btn btn-navy btn-sm" onclick="confirmDetalle()">✅ Registrar</button>
@@ -909,10 +900,16 @@ body.is-offline .main{margin-top:32px}
 
   <!-- BOX SCORE -->
   <div class="page" id="pg-boxscore">
-    <div class="card">
-      <div class="ch"><div><div class="ct">Selecciona un juego del Calendario</div><div style="font-size:12px;color:var(--g400);margin-top:2px">Los box scores aparecen al finalizar juegos</div></div></div>
-      <div style="text-align:center;padding:36px;color:var(--g400)"><div style="font-size:32px;margin-bottom:8px">📋</div><div style="font-size:14px;font-weight:600;color:var(--g600)">Sin juegos finalizados aún</div></div>
-      <div class="sf"><span id="sf-bs">Liga Softbol Femenil de Zapopan</span><img class="beisbol-logo" src="" alt="Beisbolandia"></div>
+    <div id="boxscore-content">
+      <div class="card">
+        <div class="ch"><div class="ct">Box Score</div></div>
+        <div style="text-align:center;padding:36px;color:var(--g400)">
+          <div style="font-size:32px;margin-bottom:8px">📋</div>
+          <div style="font-size:14px;font-weight:600;color:var(--g600)">Sin juegos finalizados aún</div>
+          <div style="font-size:12px;margin-top:5px">Finaliza un juego para ver el box score aquí</div>
+        </div>
+        <div class="sf"><span id="sf-bs">Liga Softbol Femenil de Zapopan</span><img class="beisbol-logo" src="" alt="Beisbolandia"></div>
+      </div>
     </div>
   </div>
 
@@ -1707,6 +1704,9 @@ function go(key, btn){
   if(tt) tt.textContent = TITLES[key]||key;
   closeSidebar();
   window.scrollTo(0,0);
+  // Auto-render boxscore when navigating to it
+  if(key==='boxscore') setTimeout(renderBoxScore, 50);
+  if(key==='leaders')  setTimeout(buildLeadersFromLocal, 50);
 }
 function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('ov').classList.add('open'); }
 function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('ov').classList.remove('open'); }
@@ -1767,7 +1767,6 @@ function openDetalle(tipo){
   _detallePlay=tipo; _detalleZona=null; _detalleTipo=null; _detalleJugDef=null; _detalleRbi=0;
   document.getElementById('det-title').textContent=cfg.label;
   document.getElementById('det-subtitle').textContent='Turno '+lTurno+' · Inn '+lInning+(lMitad==='alta'?' ▲ Alta':' ▼ Baja')+' · '+lOuts+' outs';
-  document.getElementById('det-rbi-val').textContent=0;
   const zonaS=document.getElementById('det-zona-section');
   const zonaG=document.getElementById('det-zona-grid');
   if(cfg.skipZona||cfg.cat==='out'||cfg.cat==='fly'||cfg.cat==='line'||cfg.cat==='k'){
@@ -1786,13 +1785,13 @@ function openDetalle(tipo){
   const defs=JUG_DEF[tipo]||[];
   if(cfg.skipDef||!defs.length){ defS.style.display='none'; }
   else { defS.style.display='block'; defG.innerHTML=defs.map(d=>`<button class="det-btn" onclick="selDef('${d.k}',this)" style="font-size:10px">${d.l}</button>`).join(''); }
-  document.getElementById('det-rbi-section').style.display=(cfg.cat==='hit')?'block':'none';
+  // RBI auto-calculated — no manual input needed
   openModal('modal-detalle');
 }
 function selZona(k,btn){ _detalleZona=k; document.querySelectorAll('#det-zona-grid .det-btn').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel'); }
 function selTipo(k,btn){ _detalleTipo=k; document.querySelectorAll('#det-tipo-grid .det-btn').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel'); }
 function selDef(k,btn){ _detalleJugDef=k; document.querySelectorAll('#det-def-grid .det-btn').forEach(b=>b.classList.remove('sel','sel-red')); btn.classList.add('sel-red'); document.getElementById('det-custom-input').value=''; }
-function adjRbi(d){ _detalleRbi=Math.max(0,(_detalleRbi||0)+d); document.getElementById('det-rbi-val').textContent=_detalleRbi; }
+function adjRbi(d){ /* deprecated — RBI auto-calculated */ }
 function confirmDetalle(){
   const ci=document.getElementById('det-custom-input');
   if(ci&&ci.value.trim()) _detalleJugDef=ci.value.trim();
@@ -1803,7 +1802,7 @@ function confirmDetalle(){
   else if(_detalleZona) parts.push(_detalleZona);
   if(_detalleTipo) parts.push(lblMap[_detalleTipo]||_detalleTipo);
   const desc=parts.join(' · ');
-  regPlay(_detallePlay,{zona:_detalleZona,tipo:_detalleTipo,jugDef:_detalleJugDef,rbi:_detalleRbi,desc});
+  regPlay(_detallePlay,{zona:_detalleZona,tipo:_detalleTipo,jugDef:_detalleJugDef,desc}); // rbi auto-calculated
 }
 function skipDetalle(){ closeModal('modal-detalle'); regPlay(_detallePlay,{rbi:0,desc:''}); }
 
@@ -1906,6 +1905,142 @@ async function confirmImport(){
   if(eqId) await loadRoster(eqId);
 }
 
+
+
+// ════════════════════════════════════════════════════
+// BOX SCORE — renders after game ends
+// ════════════════════════════════════════════════════
+function renderBoxScore(gameData){
+  const d = gameData || window._lastGameStats;
+  const el = document.getElementById('boxscore-content');
+  if(!el) return;
+  if(!d){ el.innerHTML=`<div class="card"><div style="text-align:center;padding:36px;color:var(--g400)"><div style="font-size:32px;margin-bottom:8px">📋</div><div style="font-size:14px;font-weight:600;color:var(--g600)">Sin juegos finalizados aún</div></div><div class="sf"><span>Liga Softbol Femenil de Zapopan</span><img class="beisbol-logo" src="" alt="Beisbolandia"></div></div>`; setLogos(); return; }
+
+  const localNm = d.juego?.local_nombre   || 'Local';
+  const visNm   = d.juego?.visitante_nombre|| 'Visitante';
+  const inns    = d.innings||7;
+
+  // Build linescore header row
+  const innHdr = Array.from({length:inns},(_, i)=>`<th class="r">${i+1}</th>`).join('');
+  const localLs = Array.from({length:inns},(_, i)=>`<td class="r">${d.linescore?.local?.[i]!==null&&d.linescore?.local?.[i]!==undefined?d.linescore.local[i]:'0'}</td>`).join('');
+  const visLs   = Array.from({length:inns},(_, i)=>`<td class="r">${d.linescore?.visitante?.[i]!==null&&d.linescore?.visitante?.[i]!==undefined?d.linescore.visitante[i]:'0'}</td>`).join('');
+
+  const hLocal = d.local?.reduce((a,j)=>a+(j.stats?.h||0),0)||0;
+  const hVis   = d.visitante?.reduce((a,j)=>a+(j.stats?.h||0),0)||0;
+
+  // Build batting table for one team
+  const battingTable = (players, label) => {
+    const rows = players
+      .filter(j=>j.turno>0&&j.posicion!=='BN')
+      .sort((a,b)=>a.turno-b.turno)
+      .map(j=>{
+        const s = j.stats||{ab:0,h:0,rbi:0,bb:0,k:0};
+        const avg = s.ab>0?(s.h/s.ab).toFixed(3).replace('0.','.'):'---';
+        return `<tr>
+          <td>#${j.numero||'—'}</td>
+          <td class="str">${j.nombre||'—'}</td>
+          <td class="r" style="color:var(--g400);font-size:11px">${j.posicion||''}</td>
+          <td class="r">${s.ab||0}</td>
+          <td class="r str">${s.h||0}</td>
+          <td class="r">${s.rbi||0}</td>
+          <td class="r">${s.bb||0}</td>
+          <td class="r">${s.k||0}</td>
+          <td class="r hl">${avg}</td>
+        </tr>`;
+      }).join('');
+    return `<div style="margin-bottom:14px">
+      <div style="font-family:var(--fd);font-size:14px;font-weight:800;color:var(--navy);padding:8px 0 6px;text-transform:uppercase;letter-spacing:.04em">${label}</div>
+      <div style="overflow-x:auto">
+      <table class="dt" style="min-width:380px">
+        <thead><tr><th>#</th><th>Jugadora</th><th>Pos</th><th class="r">AB</th><th class="r">H</th><th class="r">RBI</th><th class="r">BB</th><th class="r">K</th><th class="r">AVG</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      </div>
+    </div>`;
+  };
+
+  el.innerHTML=`
+    <div class="card" style="overflow:hidden">
+      <!-- Header -->
+      <div style="background:var(--navy);padding:14px 16px">
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${d.juego?.fecha||''} · ${d.juego?.cancha||''} · ${d.juego?.tipo||''}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="text-align:center;flex:1">
+            <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6)">${localNm.toUpperCase()}</div>
+            <div style="font-family:var(--fd);font-size:44px;font-weight:800;color:#fff;line-height:1">${d.score?.local||0}</div>
+          </div>
+          <div style="text-align:center;padding:0 12px;font-family:var(--fd);font-size:18px;color:rgba(255,255,255,.4);font-weight:700">Final</div>
+          <div style="text-align:center;flex:1">
+            <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6)">${visNm.toUpperCase()}</div>
+            <div style="font-family:var(--fd);font-size:44px;font-weight:800;color:#fff;line-height:1">${d.score?.visitante||0}</div>
+          </div>
+        </div>
+      </div>
+      <!-- Linescore -->
+      <div style="overflow-x:auto;background:var(--navy-dk)">
+        <table class="ls" style="min-width:${inns*26+200}px">
+          <thead><tr><th class="lh">Equipo</th>${innHdr}<th class="r" style="color:var(--gold)">R</th><th class="r">H</th><th class="r">E</th></tr></thead>
+          <tbody>
+            <tr><td class="lh">${localNm}</td>${localLs}<td class="tot" style="color:var(--gold)">${d.score?.local||0}</td><td class="tot">${hLocal}</td><td class="tot">0</td></tr>
+            <tr><td class="lh">${visNm}</td>${visLs}<td class="tot" style="color:var(--gold)">${d.score?.visitante||0}</td><td class="tot">${hVis}</td><td class="tot">0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Batting stats -->
+      <div style="padding:12px 14px">
+        ${battingTable(d.local||[], localNm+' — Bateo')}
+        ${battingTable(d.visitante||[], visNm+' — Bateo')}
+      </div>
+      <div class="sf"><span>${localNm} vs ${visNm} · Liga Softbol Femenil de Zapopan</span><img class="beisbol-logo" src="" alt="Beisbolandia"></div>
+    </div>`;
+  setLogos();
+}
+
+// Build standings from local gameStats (offline-friendly)
+function buildStandingsFromLocal(){
+  // Re-use existing standingsData or reload from API
+  if(apiConnected()) loadJuegosFromAPI().catch(()=>{});
+}
+
+// Líderes from gameStats
+function buildLeadersFromLocal(){
+  const allPlayers = [...(window._lastGameStats?.local||[]), ...(window._lastGameStats?.visitante||[])];
+  if(!allPlayers.length) return;
+  // AVG leaders
+  const avgEl = document.getElementById('ldr-avg');
+  const hrEl  = document.getElementById('ldr-hr');
+  const kEl   = document.getElementById('ldr-k');
+  const rbiEl = document.getElementById('ldr-rbi')||document.getElementById('ldr-era');
+
+  const sorted = allPlayers.filter(j=>j.stats?.ab>0).sort((a,b)=>{
+    const avgA = a.stats.ab>0?a.stats.h/a.stats.ab:0;
+    const avgB = b.stats.ab>0?b.stats.h/b.stats.ab:0;
+    return avgB-avgA;
+  });
+
+  const li2=(j,val,cls='')=>`<div class="li2"><div class="lrk${cls}">${j.rank||''}</div><div class="ldot" style="background:var(--navy)"></div><div class="linfo"><div class="lname">${j.nombre}</div><div class="lteam">${j.equipo||''}</div></div><div class="lval">${val}</div></div>`;
+
+  if(avgEl && sorted.length){
+    avgEl.innerHTML = sorted.slice(0,5).map((j,i)=>{
+      const avg=(j.stats.h/j.stats.ab).toFixed(3).replace('0.','.');
+      return li2({...j,rank:i+1,equipo:j.turno?'':''},avg, i===0?' r1':i===1?' r2':i===2?' r3':'');
+    }).join('');
+  }
+  if(hrEl){
+    const hrs = allPlayers.filter(j=>(j.stats?.plays||[]).some(p=>p.tipo==='HR')).sort((a,b)=>{
+      const countHR=p=>(p.stats?.plays||[]).filter(x=>x.tipo==='HR').length;
+      return countHR(b)-countHR(a);
+    });
+    hrEl.innerHTML = hrs.slice(0,5).map((j,i)=>{
+      const n=(j.stats?.plays||[]).filter(p=>p.tipo==='HR').length;
+      return li2({...j,rank:i+1},n, i===0?' r1':i===1?' r2':i===2?' r3':'');
+    }).join('') || '<div style="text-align:center;padding:16px;color:var(--g400);font-size:12px">Sin jonrones</div>';
+  }
+  if(kEl){
+    const ks = allPlayers.filter(j=>(j.stats?.k||0)>0).sort((a,b)=>(b.stats?.k||0)-(a.stats?.k||0));
+    kEl.innerHTML = ks.slice(0,5).map((j,i)=>li2({...j,rank:i+1},(j.stats?.k||0)+'K', i===0?' r1':'')).join('')||'<div style="text-align:center;padding:16px;color:var(--g400);font-size:12px">Sin ponches</div>';
+  }
+}
 
 // ════════════════════════════════════════════════════
 // ESTADÍSTICAS DEL JUEGO (bateador popup + errores)
@@ -2319,6 +2454,118 @@ function updateLinescoreRun(equipo, inning, runs){
 // Update total pitch badge alongside count bar
 const _origUpdCount = updCount;
 
+
+// ════════════════════════════════════════════════════
+// GAME STATE PERSISTENCE — survives F5 / page reload
+// ════════════════════════════════════════════════════
+const GAME_STATE_KEY = 'liga_game_state';
+
+async function saveGameState(){
+  if(!DB) return;
+  const state = {
+    juegoId:          window._juegoId,
+    juegoActual:      window._juegoActual,
+    lInning, lMitad, lOuts, lTurno,
+    lLocalScore, lVisScore,
+    lTotalPitches, lTotalBalls, lTotalStrikes, lTotalFouls,
+    lTurnoLocal, lTurnoVisitante,
+    lDeporte, lInningsRegular,
+    bases: JSON.parse(JSON.stringify(bases)),
+    linescoreData: JSON.parse(JSON.stringify(linescoreData)),
+    gameStats:  JSON.parse(JSON.stringify(gameStats)),
+    lLineupLocal:    JSON.parse(JSON.stringify(lLineupLocal)),
+    lLineupVisitante:JSON.parse(JSON.stringify(lLineupVisitante)),
+    lUltimoOut,
+    savedAt: Date.now(),
+    lGameOver,
+    lastGameStats: window._lastGameStats ? JSON.parse(JSON.stringify(window._lastGameStats)) : null,
+    // Save play log HTML
+    playLog: document.getElementById('play-log')?.innerHTML||'',
+  };
+  try{ await dbPut('cache',{key:GAME_STATE_KEY, value:JSON.stringify(state)}); }catch(e){}
+}
+
+async function restoreGameState(){
+  if(!DB) return;
+  try{
+    const rec = await new Promise((res,rej)=>{
+      const tx=DB.transaction('cache','readonly');
+      const r=tx.objectStore('cache').get(GAME_STATE_KEY);
+      r.onsuccess=()=>res(r.result?.value||null);
+      r.onerror=()=>res(null);
+    });
+    if(!rec) return;
+    const s = JSON.parse(rec);
+    // Only restore if game was recent (last 24 hours)
+    if(!s || !s.juegoId || (Date.now()-s.savedAt)>86400000) return;
+
+    // Restore all state
+    window._juegoId    = s.juegoId;
+    window._juegoActual= s.juegoActual;
+    lInning  = s.lInning||1;
+    lMitad   = s.lMitad||'alta';
+    lOuts    = s.lOuts||0;
+    lTurno   = s.lTurno||1;
+    lLocalScore = s.lLocalScore||0;
+    lVisScore   = s.lVisScore||0;
+    lTotalPitches = s.lTotalPitches||0;
+    lTotalBalls   = s.lTotalBalls||0;
+    lTotalStrikes = s.lTotalStrikes||0;
+    lTotalFouls   = s.lTotalFouls||0;
+    lTurnoLocal    = s.lTurnoLocal||0;
+    lTurnoVisitante= s.lTurnoVisitante||0;
+    lDeporte        = s.lDeporte||'softbol';
+    lInningsRegular = s.lInningsRegular||7;
+    lUltimoOut      = s.lUltimoOut||null;
+    lGameOver       = s.lGameOver||false;
+    if(s.lastGameStats) window._lastGameStats = s.lastGameStats;
+    // Restore objects
+    if(s.bases)           Object.assign(bases, s.bases);
+    if(s.linescoreData){  linescoreData.local=s.linescoreData.local; linescoreData.visitante=s.linescoreData.visitante; }
+    if(s.gameStats)       Object.assign(gameStats, s.gameStats);
+    if(s.lLineupLocal)    lLineupLocal    = s.lLineupLocal;
+    if(s.lLineupVisitante)lLineupVisitante= s.lLineupVisitante;
+
+    // Restore play log
+    const log = document.getElementById('play-log');
+    if(log && s.playLog) log.innerHTML = s.playLog;
+
+    // Set current batter
+    const isBatLocal = lMitad==='baja';
+    const lineup     = isBatLocal ? lLineupLocal : lLineupVisitante;
+    const batters    = lineup.filter(j=>j.turno>0).sort((a,b)=>a.turno-b.turno);
+    if(batters.length){
+      const idx = isBatLocal ? lTurnoLocal : lTurnoVisitante;
+      lCurrentBatter = batters[idx%batters.length];
+    }
+
+    // Update all UI
+    updLiveUI();
+    updCount();
+    updDiamond();
+    renderLinescore();
+    updateBatterCard();
+    updateLineupStrip();
+    if(lGameOver) setTimeout(lockScoringUI, 500);
+
+    // Show active game banner
+    const banner = document.getElementById('active-game-banner');
+    const txt    = document.getElementById('active-game-txt');
+    if(banner){ banner.style.display='flex'; }
+    if(txt && s.juegoActual){
+      txt.textContent=(s.juegoActual.local_nombre||'Local')+' vs '+(s.juegoActual.visitante_nombre||'Visitante')+' 🔴 En vivo';
+    }
+
+    toast('🔄 Juego restaurado · Inn '+lInning+' · '+lLocalScore+'-'+lVisScore);
+    return true;
+  }catch(e){ console.warn('restoreGameState error:',e); return false; }
+}
+
+async function clearGameState(){
+  if(!DB) return;
+  try{ await dbPut('cache',{key:GAME_STATE_KEY, value:null}); }catch(e){}
+}
+
 // ══ OFFLINE / INDEXEDDB ══
 let DB = null;
 let isOnline = navigator.onLine;
@@ -2411,6 +2658,7 @@ let lInning=1,lMitad='alta',lOuts=0,lTurno=1;
 let lLocalScore=0,lVisScore=0;
 // Game rules
 let lDeporte='softbol';       // softbol(7) | beisbol(9)
+let lGameOver=false;           // true = game finished, block all scoring
 let lInningsRegular=7;        // innings regulation
 let lUltimoOut=null;          // {id, nombre, equipo} for extra innings runner
 let lLineupLocal=[];          // [{id,nombre,numero,posicion,turno,enJuego}]
@@ -2492,6 +2740,7 @@ function updDiamond(){
 }
 
 async function addPitch(type){
+  if(lGameOver){ toast('🏁 Juego finalizado — no se pueden anotar más jugadas'); return; }
   lPitches++; lTotalPitches++;
   if(type==='b'){
     lBalls=Math.min(lBalls+1,4); lTotalBalls++;
@@ -2507,6 +2756,7 @@ async function addPitch(type){
 }
 
 async function regPlay(r, detalle={}){
+  if(lGameOver){ toast('🏁 Juego finalizado — no se pueden anotar más jugadas'); return; }
   // ── 1. Capture batting context BEFORE anything changes ──
   const batterid   = lCurrentBatter?.id;
   const isBatLocal = lMitad==='baja';
@@ -2569,6 +2819,9 @@ async function regPlay(r, detalle={}){
   updateBatterCard();
   updateLineupStrip();
 
+  // Persist game state to IndexedDB (survives F5)
+  saveGameState().catch(()=>{});
+
   // Save offline-first with full detail
   await queueOrPost({
     action:       'addJugada',
@@ -2602,6 +2855,7 @@ function endInning(){
     setLineupCurrentBatter('visitante');
     updLiveUI();
     toast('🔄 Cambio de lado — batea '+( window._juegoActual?.visitante_nombre||'Visitante'));
+    saveGameState().catch(()=>{});
   } else {
     lMitad='alta';
     lInning++;
@@ -2705,33 +2959,163 @@ function confirmarExtraInning(){
   toast('⚡ Entrada extra '+lInning+' · '+corrNom+' en 2da base');
 }
 function endGame(winnerId){
+  if(lGameOver) return; // already finished
+  lGameOver = true;
+
   const w = winnerId || (lLocalScore > lVisScore
     ? (window._juegoActual?.local_id||'')
     : lVisScore > lLocalScore
     ? (window._juegoActual?.visitante_id||'')
     : '');
-  const wName = w===window._juegoActual?.local_id
-    ? window._juegoActual?.local_nombre||'Local'
-    : w===window._juegoActual?.visitante_id
-    ? window._juegoActual?.visitante_nombre||'Visitante'
-    : 'Empate';
+  const localNm = window._juegoActual?.local_nombre||'Local';
+  const visNm   = window._juegoActual?.visitante_nombre||'Visitante';
+  const wName   = w===window._juegoActual?.local_id ? localNm
+                : w===window._juegoActual?.visitante_id ? visNm
+                : 'Empate';
+
+  // Count hits from gameStats
+  let hLocal=0, hVis=0, eLocal=0, eVis=0;
+  Object.values(gameStats).forEach(s=>{
+    const h = parseInt(s.h)||0;
+    if(s.equipo==='local') hLocal+=h; else hVis+=h;
+  });
+
+  // Save to API
   queueOrPost({
     action:'finalizarJuego',
     id: window._juegoId||'',
-    carreras_local: lLocalScore,
-    carreras_visitante: lVisScore,
-    hits_local:0, hits_visitante:0,
-    errores_local:0, errores_visitante:0,
+    carreras_local: lLocalScore, carreras_visitante: lVisScore,
+    hits_local: hLocal, hits_visitante: hVis,
+    errores_local: eLocal, errores_visitante: eVis,
     ganador_id: w,
   });
+
   // Update local _juegos cache
   const jIdx = _juegos.findIndex(j=>j.id===window._juegoId);
-  if(jIdx>=0){ _juegos[jIdx].estado='finalizado'; _juegos[jIdx].carreras_local=lLocalScore; _juegos[jIdx].carreras_visitante=lVisScore; }
+  if(jIdx>=0){
+    _juegos[jIdx].estado='finalizado';
+    _juegos[jIdx].carreras_local=lLocalScore;
+    _juegos[jIdx].carreras_visitante=lVisScore;
+    _juegos[jIdx].hits_local=hLocal;
+    _juegos[jIdx].hits_visitante=hVis;
+    _juegos[jIdx].ganador_id=w;
+    _juegos[jIdx].ganador_nombre=wName;
+  }
+
+  // Disable scoring buttons visually
+  lockScoringUI();
+
+  // Clear active game banner
   const banner = document.getElementById('active-game-banner');
   if(banner) banner.style.display='none';
-  toast('🏁 Juego finalizado · '+( lLocalScore)+'-'+(lVisScore)+(wName!=='Empate'?' · Gana '+wName:'· Empate'));
+
+  // Clear game state from IndexedDB
+  clearGameState().catch(()=>{});
+
+  // Build stats from local gameStats
+  buildGameStatsFromLocal();
+
+  // Show final result modal
+  showGameOverModal(localNm, visNm, wName, hLocal, hVis);
+
+  // Refresh calendar, boxscore, leaders
   renderCalendar();
+  buildStandingsFromLocal();
+  renderBoxScore();
+  buildLeadersFromLocal();
 }
+
+function lockScoringUI(){
+  // Disable main action buttons
+  document.querySelectorAll('.act-btn').forEach(b=>{
+    b.disabled=true; b.style.opacity='0.35'; b.style.cursor='not-allowed';
+  });
+  // Dim bottom bar buttons except keep Fin active
+  document.querySelectorAll('.bb-btn').forEach(b=>{
+    b.disabled=true; b.style.opacity='0.35'; b.style.cursor='not-allowed';
+  });
+  // Show game-over banner over the scoring area
+  const actionGrid = document.querySelector('.action-grid');
+  if(actionGrid){
+    const overlay = document.createElement('div');
+    overlay.id='gameover-overlay';
+    overlay.style.cssText='position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;border-radius:var(--r-lg);z-index:50;cursor:pointer';
+    overlay.innerHTML='<div style="text-align:center;color:#fff"><div style="font-size:28px">🏁</div><div style="font-size:14px;font-weight:700;margin-top:6px">JUEGO FINALIZADO</div><div style="font-size:12px;opacity:.7;margin-top:3px">Toca para ver el Box Score</div></div>';
+    overlay.onclick=()=>go('boxscore',null);
+    actionGrid.style.position='relative';
+    actionGrid.appendChild(overlay);
+  }
+}
+
+function buildGameStatsFromLocal(){
+  // Build batting stats per player from gameStats
+  // These will be used by the boxscore page
+  window._lastGameStats = {
+    local:    lLineupLocal.map(j=>({...j, stats: gameStats[j.id]||{ab:0,h:0,rbi:0,bb:0,k:0,plays:[]}})),
+    visitante:lLineupVisitante.map(j=>({...j, stats: gameStats[j.id]||{ab:0,h:0,rbi:0,bb:0,k:0,plays:[]}})),
+    score:    {local:lLocalScore, visitante:lVisScore},
+    linescore: JSON.parse(JSON.stringify(linescoreData)),
+    juego:    window._juegoActual,
+    innings:  lInningsRegular,
+  };
+}
+
+function showGameOverModal(localNm, visNm, wName, hLocal, hVis){
+  // Create game over overlay modal
+  let m = document.getElementById('modal-gameover');
+  if(!m){
+    m = document.createElement('div');
+    m.id='modal-gameover';
+    m.style.cssText='position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center';
+    document.body.appendChild(m);
+  }
+  const isDraw = lLocalScore===lVisScore;
+  const winnerColor = isDraw?'#E8A020': '#1B8B4A';
+
+  m.innerHTML=`<div style="background:var(--white);border-radius:20px 20px 0 0;width:100%;max-width:520px;padding:24px 20px 36px;text-align:center">
+    <div style="font-size:40px;margin-bottom:8px">${isDraw?'🤝':'🏆'}</div>
+    <div style="font-family:var(--fd);font-size:26px;font-weight:800;color:${winnerColor};margin-bottom:4px">
+      ${isDraw?'EMPATE':wName.toUpperCase()+' GANA'}
+    </div>
+    <div style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:16px">
+      ${localNm} ${lLocalScore} — ${lVisScore} ${visNm}
+    </div>
+    <!-- Mini linescore -->
+    <div style="background:var(--navy-dk);border-radius:var(--r-md);padding:10px;margin-bottom:20px;overflow-x:auto;font-size:12px">
+      <div style="display:flex;color:rgba(255,255,255,.5);font-weight:700;margin-bottom:6px">
+        <div style="min-width:80px;text-align:left;font-size:10px">EQUIPO</div>
+        ${Array.from({length:lInningsRegular},(_, i)=>`<div style="min-width:24px;text-align:center">${i+1}</div>`).join('')}
+        <div style="min-width:28px;text-align:center;color:var(--gold)">R</div>
+        <div style="min-width:24px;text-align:center">H</div>
+      </div>
+      <div style="display:flex;color:#fff;font-weight:600;margin-bottom:4px">
+        <div style="min-width:80px;text-align:left;font-size:11px">${localNm.substring(0,8)}</div>
+        ${Array.from({length:lInningsRegular},(_, i)=>`<div style="min-width:24px;text-align:center">${linescoreData.local[i]!==null?linescoreData.local[i]:'0'}</div>`).join('')}
+        <div style="min-width:28px;text-align:center;color:var(--gold);font-weight:800">${lLocalScore}</div>
+        <div style="min-width:24px;text-align:center">${hLocal}</div>
+      </div>
+      <div style="display:flex;color:#fff;font-weight:600">
+        <div style="min-width:80px;text-align:left;font-size:11px">${visNm.substring(0,8)}</div>
+        ${Array.from({length:lInningsRegular},(_, i)=>`<div style="min-width:24px;text-align:center">${linescoreData.visitante[i]!==null?linescoreData.visitante[i]:'0'}</div>`).join('')}
+        <div style="min-width:28px;text-align:center;color:var(--gold);font-weight:800">${lVisScore}</div>
+        <div style="min-width:24px;text-align:center">${hVis}</div>
+      </div>
+    </div>
+    <!-- Action buttons -->
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button onclick="document.getElementById('modal-gameover').style.display='none'; go('boxscore',null); renderBoxScore();"
+        style="flex:1;max-width:180px;padding:12px;background:var(--navy);color:#fff;border:none;border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer">
+        📋 Box Score
+      </button>
+      <button onclick="document.getElementById('modal-gameover').style.display='none'; go('calendar',null);"
+        style="flex:1;max-width:180px;padding:12px;background:var(--g100);color:var(--navy);border:1px solid var(--g200);border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer">
+        📅 Calendario
+      </button>
+    </div>
+  </div>`;
+  m.style.display='flex';
+}
+
 
 // ══ STANDINGS ══
 let currentCat=0;
@@ -3233,11 +3617,15 @@ function doIniciarJuego(juego){
   lTurno       = 1;
   lTurnoLocal    = 0;
   lTurnoVisitante= 0;
+  lGameOver=false;
   lBalls=0; lStrikes=0; lFouls=0; lPitches=0;
   lTotalPitches=0; lTotalBalls=0; lTotalStrikes=0; lTotalFouls=0;
   clearBases();
-  // Reset game stats
+  // Reset game stats and linescore
   Object.keys(gameStats).forEach(k=>delete gameStats[k]);
+  linescoreData.local     = Array(lInningsRegular).fill(null);
+  linescoreData.visitante = Array(lInningsRegular).fill(null);
+  clearGameState().catch(()=>{});
 
   // Update live banner names
   const ln = document.getElementById('live-local-name');
@@ -3949,7 +4337,7 @@ function hideLoading(){ const o=document.getElementById('loading-overlay'); if(o
   updateOnlineStatus();
 
   // 4. Open IndexedDB in background (non-blocking)
-  openDB().then(()=>{ updatePendingCount(); }).catch(()=>{});
+  openDB().then(async ()=>{ updatePendingCount(); await restoreGameState(); }).catch(()=>{});
 
   // 5. Load from API in background (non-blocking)
   if(apiConnected()){
