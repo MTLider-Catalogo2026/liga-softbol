@@ -1705,8 +1705,9 @@ function go(key, btn){
   closeSidebar();
   window.scrollTo(0,0);
   // Auto-render boxscore when navigating to it
-  if(key==='boxscore') setTimeout(renderBoxScore, 50);
-  if(key==='leaders')  setTimeout(buildLeadersFromLocal, 50);
+  if(key==='boxscore')  setTimeout(renderBoxScore, 50);
+  if(key==='leaders')   setTimeout(buildLeadersFromLocal, 50);
+  if(key==='calendar')  setTimeout(renderCalendar, 50);
 }
 function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('ov').classList.add('open'); }
 function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('ov').classList.remove('open'); }
@@ -3020,6 +3021,7 @@ function endGame(winnerId){
 
   // Refresh calendar, boxscore, leaders
   renderCalendar();
+  saveJuegosLocal(); // Persist finalizado status
   buildStandingsFromLocal();
   renderBoxScore();
   buildLeadersFromLocal();
@@ -3209,6 +3211,9 @@ async function addTeam(){
 function populateCatSelects(){
   const opts=APP.cats.map(c=>`<option>${c.name}</option>`).join('');
   ['ros-cat','cred-cat','jug-cat'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=opts; });
+  // Also update calendar category filter
+  const cf=document.getElementById('cal-cat-filter');
+  if(cf) cf.innerHTML='<option>Todas</option>'+opts;
 }
 function populateTeamSelects(){
   const opts=APP.teamsList.length?APP.teamsList.map(t=>`<option value="${t.id}">${t.name}</option>`).join(''):'<option>— sin equipos —</option>';
@@ -3556,40 +3561,43 @@ async function saveJuego(iniciarAhora=false){
   const visitanteName= visitEl?.options[visitEl?.selectedIndex]?.text  || 'Visitante';
 
   closeModal('modal-juego');
-  showLoading('Guardando juego...');
 
-  const res = await queueOrPost({
+  const deporte = document.getElementById('juego-deporte')?.value||'softbol';
+  // Generate a local ID immediately — don't wait for API
+  const juegoId = 'JUEGO_' + Date.now();
+  const nuevoJuego = {
+    id: juegoId, fecha, hora, cancha, categoria: cat,
+    local_id: localId, visitante_id: visitanteId,
+    local_nombre: localName, visitante_nombre: visitanteName,
+    carreras_local: 0, carreras_visitante: 0,
+    estado: iniciarAhora ? 'en_vivo' : 'programado',
+    jornada, tipo, deporte,
+  };
+
+  // Add to local cache IMMEDIATELY (don't wait for API)
+  _juegos.unshift(nuevoJuego);
+  renderCalendar();
+  saveJuegosLocal();
+
+  toast('✅ Juego ' + localName + ' vs ' + visitanteName + ' guardado');
+
+  // Save to API in background (non-blocking)
+  queueOrPost({
     action: 'addJuego',
     fecha, hora, cancha, categoria: cat,
     local_id: localId, visitante_id: visitanteId,
-    jornada, tipo, deporte: document.getElementById('juego-deporte')?.value||'softbol',
-    estado: 'programado',
-  });
-
-  hideLoading();
-
-  if(res && (res.ok || res.offline)){
-    const juegoId = res.id || 'JUEGO_LOCAL_' + Date.now();
-    // Add to local cache
-    _juegos.unshift({
-      id: juegoId, fecha, hora, cancha, categoria: cat,
-      local_id: localId, visitante_id: visitanteId,
-      local_nombre: localName, visitante_nombre: visitanteName,
-      carreras_local: 0, carreras_visitante: 0,
-      estado: iniciarAhora ? 'en_vivo' : 'programado',
-      jornada, tipo, deporte: document.getElementById('juego-deporte')?.value||'softbol',
-    });
-    renderCalendar();
-    toast((res.offline?'📵':'✅')+' Juego '+localName+' vs '+visitanteName+' guardado');
-
-    if(iniciarAhora){
-      iniciarJuego({
-        id: juegoId, local_id: localId, visitante_id: visitanteId,
-        local_nombre: localName, visitante_nombre: visitanteName, categoria: cat,
-      });
+    jornada, tipo, deporte, estado: 'programado',
+  }).then(res=>{
+    // If API returns a real ID, update local cache
+    if(res && res.id && res.id !== juegoId){
+      const idx = _juegos.findIndex(j=>j.id===juegoId);
+      if(idx>=0){ _juegos[idx].id = res.id; nuevoJuego.id = res.id; }
+      saveJuegosLocal();
     }
-  } else {
-    toast('⚠️ Error al guardar el juego');
+  }).catch(()=>{});
+
+  if(iniciarAhora){
+    iniciarJuego(nuevoJuego);
   }
 }
 
@@ -3669,6 +3677,42 @@ function doIniciarJuego(juego){
   if(sub)   { sub.textContent = juego.categoria+' · '+juego.cancha; }
 }
 
+
+// ── Persist _juegos list to IndexedDB ──
+const JUEGOS_KEY = 'liga_juegos_cache';
+
+async function saveJuegosLocal(){
+  if(!DB) return;
+  try{
+    await dbPut('cache',{key:JUEGOS_KEY, value:JSON.stringify(_juegos)});
+  }catch(e){}
+}
+
+async function loadJuegosLocal(){
+  if(!DB) return false;
+  try{
+    const rec = await new Promise((res,rej)=>{
+      const tx=DB.transaction('cache','readonly');
+      const r=tx.objectStore('cache').get(JUEGOS_KEY);
+      r.onsuccess=()=>res(r.result?.value||null);
+      r.onerror=()=>res(null);
+    });
+    if(!rec) return false;
+    const saved = JSON.parse(rec);
+    if(Array.isArray(saved) && saved.length>0){
+      // Merge with in-memory (prefer in-memory if already has data)
+      if(_juegos.length===0) _juegos = saved;
+      else{
+        // Add any from saved that aren't already in _juegos
+        saved.forEach(sj=>{ if(!_juegos.find(j=>j.id===sj.id)) _juegos.push(sj); });
+      }
+      renderCalendar();
+      return true;
+    }
+  }catch(e){ console.warn('loadJuegosLocal error:',e); }
+  return false;
+}
+
 function renderCalendar(){
   const el = document.getElementById('calendar-list');
   if(!el) return;
@@ -3744,6 +3788,7 @@ async function loadJuegosFromAPI(){
       visitante_nombre: APP.teamsList.find(t=>t.id===j.visitante_id)?.name || j.visitante_id,
     }));
     renderCalendar();
+    saveJuegosLocal(); // Persist to IndexedDB
     // Check for active game
     const active = _juegos.find(j=>j.estado==='en_vivo');
     if(active){
@@ -4337,7 +4382,13 @@ function hideLoading(){ const o=document.getElementById('loading-overlay'); if(o
   updateOnlineStatus();
 
   // 4. Open IndexedDB in background (non-blocking)
-  openDB().then(async ()=>{ updatePendingCount(); await restoreGameState(); }).catch(()=>{});
+  openDB().then(async ()=>{
+    updatePendingCount();
+    await loadJuegosLocal(); // Restore juegos from IndexedDB
+    await restoreGameState();
+    // Then try API for fresher data
+    if(apiConnected()) loadJuegosFromAPI().catch(()=>{});
+  }).catch(()=>{});
 
   // 5. Load from API in background (non-blocking)
   if(apiConnected()){
