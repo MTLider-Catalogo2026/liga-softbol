@@ -2531,13 +2531,14 @@ async function restoreGameState(){
     const log = document.getElementById('play-log');
     if(log && s.playLog) log.innerHTML = s.playLog;
 
-    // Set current batter
-    const isBatLocal = lMitad==='baja';
-    const lineup     = isBatLocal ? lLineupLocal : lLineupVisitante;
-    const batters    = lineup.filter(j=>j.turno>0).sort((a,b)=>a.turno-b.turno);
-    if(batters.length){
-      const idx = isBatLocal ? lTurnoLocal : lTurnoVisitante;
-      lCurrentBatter = batters[idx%batters.length];
+    // Set current batter based on who bats in current mitad
+    // Alta = visitante bats, Baja = local bats
+    const _restoreEquipo = (lMitad==='baja') ? 'local' : 'visitante';
+    const _restoreLineup = (_restoreEquipo==='local') ? lLineupLocal : lLineupVisitante;
+    const _restoreBatters = _restoreLineup.filter(j=>j.turno>0).sort((a,b)=>a.turno-b.turno);
+    if(_restoreBatters.length){
+      const _restoreIdx = (_restoreEquipo==='local') ? lTurnoLocal : lTurnoVisitante;
+      lCurrentBatter = _restoreBatters[_restoreIdx % _restoreBatters.length];
     }
 
     // Update all UI
@@ -2785,8 +2786,16 @@ async function regPlay(r, detalle={}){
     if(lOuts>=3){
       lOuts=0;
       clearBases();
-      if(lMitad==='alta') lMitad='baja';
-      else{ lMitad='alta'; lInning++; }
+      lBalls=0; lStrikes=0; lFouls=0; lPitches=0;
+      if(lMitad==='alta'){
+        lMitad='baja';
+        setTimeout(()=>{ setLineupCurrentBatter('local'); updateLineupStrip(); }, 20);
+      } else {
+        lMitad='alta';
+        lInning++;
+        setTimeout(()=>{ setLineupCurrentBatter('visitante'); updateLineupStrip(); }, 20);
+      }
+      checkGameEnd();
     }
   }
 
@@ -2849,21 +2858,24 @@ async function regPlay(r, detalle={}){
 function undoLastPlay(){ toast('↩ Deshacer — próximamente'); }
 function endInning(){
   lOuts=0;
-  clearBases(); // ← clear all bases on inning change
+  clearBases();
+  lBalls=0; lStrikes=0; lFouls=0; lPitches=0;
+  updCount();
   if(lMitad==='alta'){
+    // Top of inning done → go to bottom → LOCAL bats
     lMitad='baja';
-    // Switch to next batter in VISITANTE lineup (they bat in Baja)
-    setLineupCurrentBatter('visitante');
-    updLiveUI();
-    toast('🔄 Cambio de lado — batea '+( window._juegoActual?.visitante_nombre||'Visitante'));
-    saveGameState().catch(()=>{});
-  } else {
-    lMitad='alta';
-    lInning++;
-    // Switch to next batter in LOCAL lineup (they bat in Alta)
     setLineupCurrentBatter('local');
     updLiveUI();
+    toast('🔄 Fin de alta — batea '+(window._juegoActual?.local_nombre||'Local'));
+    saveGameState().catch(()=>{});
+  } else {
+    // Bottom done → next inning → VISITANTE bats
+    lMitad='alta';
+    lInning++;
+    setLineupCurrentBatter('visitante');
+    updLiveUI();
     checkGameEnd();
+    saveGameState().catch(()=>{});
   }
 }
 
@@ -3635,11 +3647,12 @@ function doIniciarJuego(juego){
   linescoreData.visitante = Array(lInningsRegular).fill(null);
   clearGameState().catch(()=>{});
 
-  // Update live banner names
-  const ln = document.getElementById('live-local-name');
-  const vn = document.getElementById('live-vis-name');
-  if(ln) ln.textContent = juego.local_nombre  || 'Local';
-  if(vn) vn.textContent = juego.visitante_nombre || 'Visitante';
+  // Update live scorebar names
+  ['live-local-name','live-vis-name','ls-local-name','ls-vis-name'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    if(id.includes('local'))  el.textContent=(juego.local_nombre||'LOCAL').toUpperCase();
+    if(id.includes('vis'))    el.textContent=(juego.visitante_nombre||'VISITANTE').toUpperCase();
+  });
 
   // Reset scoreboard
   updLiveUI();
@@ -3661,6 +3674,8 @@ function doIniciarJuego(juego){
   const _vname = juego.visitante_nombre||'VISITANTE';
   const lsn=document.getElementById('ls-local-name'); if(lsn) lsn.textContent=_lname.substring(0,8).toUpperCase();
   const vsn=document.getElementById('ls-vis-name');   if(vsn) vsn.textContent=_vname.substring(0,8).toUpperCase();
+  // Set initial batter — alta = visitante bats first
+  setLineupCurrentBatter('visitante');
   // Navigate to live screen
   go('live', null);
   // Highlight live button in sidebar
@@ -3713,6 +3728,12 @@ async function loadJuegosLocal(){
   return false;
 }
 
+function resolveTeamName(id){
+  if(!id) return null;
+  const t = APP.teamsList?.find(x=>x.id===id);
+  return t?.name || null;
+}
+
 function renderCalendar(){
   const el = document.getElementById('calendar-list');
   if(!el) return;
@@ -3761,7 +3782,7 @@ function renderCalendar(){
         : '';
       return `<div class="gr">
         <div class="gd"><div class="gd-d">${formatFecha(j.fecha)}</div><div class="gd-t">${j.hora||'—'}</div></div>
-        <div class="gt">${j.local_nombre||j.local_id} <span class="vs">vs</span> ${j.visitante_nombre||j.visitante_id}</div>
+        <div class="gt">${j.local_nombre||resolveTeamName(j.local_id)||j.local_id||'Local'} <span class="vs">vs</span> ${j.visitante_nombre||resolveTeamName(j.visitante_id)||j.visitante_id||'Visitante'}</div>
         ${score}
         <div class="gm" style="gap:5px">${badge}<span class="gv">${j.cancha||''}</span>${accion}</div>
       </div>`;
@@ -3800,9 +3821,24 @@ async function loadJuegosFromAPI(){
   }
 }
 
+function continuarJuego(id){
+  const j = _juegos.find(x=>x.id===id);
+  if(!j) return;
+  // If game is already in progress in memory, just navigate to live
+  if(window._juegoId===id && !lGameOver){
+    go('live',null);
+    toast('🔴 Continuando ' + (j.local_nombre||'Local') + ' vs ' + (j.visitante_nombre||'Visitante'));
+  } else {
+    iniciarJuego(j);
+  }
+}
 function iniciarDesdeCalendario(id){
   const j = _juegos.find(x=>x.id===id);
-  if(j) iniciarJuego(j);
+  if(j) iniciarJuego({
+    ...j,
+    local_nombre:     j.local_nombre     || resolveTeamName(j.local_id)     || j.local_id,
+    visitante_nombre: j.visitante_nombre || resolveTeamName(j.visitante_id) || j.visitante_id,
+  });
   else toast('⚠️ Juego no encontrado');
 }
 
